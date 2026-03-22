@@ -1,5 +1,89 @@
-# Vue 3 + TypeScript + Vite
+## 一、 产品概述 (Executive Summary)
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+### 1.1 项目背景与定位
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+在信息爆炸时代，个人消费者在面临复杂决策（如购买高价值数码产品、租房、求职规划）时，极易陷入信息过载与决策焦虑。
+**ChoiceMatrix** 定位为一款**“轻量、专业、智能的个人结构化决策画布”**，通过量化对比与 AI 辅助，让每一次复杂选择都变得清晰自信。
+
+### 1.2 商业与产品目标 (OKRs)
+
+- **业务目标**：上线 6 个月内验证 PMF，实现 **3% 的免费转付费 (Pro) 转化率**。
+- **产品目标**：用户对比决策耗时缩短 30%；核心用户次周留存率达到 25%。
+
+### 1.3 目标用户与核心场景
+
+- **数码发烧友**：高频参数对比（需要精准数值录入与权重控制）。
+- **生活决策者**：租房、Offer 选择（需要主观评分量化与 AI 优劣势总结）。
+
+---
+
+## 二、 产品范围与容量约束 (Scope & Limits)
+
+### 2.1 边界划定
+
+- **In Scope**：动态对比画布、基础/计分列、云端同步、AI 总结、外链分享、支付订阅。
+- **Out of Scope (V1.0)**：多人协作、评论系统、移动端原生编辑（仅做纯只读适配）、模板社区。
+
+### 2.2 容量限制 (防前端卡顿与大模型 Token 溢出)
+
+- **Free (免费版)**：最大 5 选项 x 3 维度（15 单元格）。
+- **Pro (专业版)**：最大 10 选项 x 10 维度（100 单元格）。
+
+---
+
+## 三、 核心功能需求详情 (Functional Requirements)
+
+### 3.1 智能计分列 (Smart Scoring Column) 🌟
+
+**业务逻辑**：允许在单一单元格内同步完成“文本记录”与“0-10分量化打分”。
+
+- **浏览态**：左侧展示动态彩色分数 Badge，右侧单行截断展示文本描述。
+- **编辑态**：单击唤起悬浮气泡 (Popover)，内嵌 0-10 拖拽滑块 (Slider) 和文本域 (Textarea)。支持 Tab 切换与数字键打分。
+
+**核心算法与边界 (重要)**：
+
+- **加权公式**：
+$$Total = \frac{\sum_{i=1}^{n} (Score_i \times Weight_i)}{\sum_{i=1}^{n} Weight_i}$$
+- **空值豁免机制**：若某单元格未打分 (Score 为 Null)，计算该行总分时，**必须将该列的权重从分母中剔除**。
+- **除零保护**：当该行有效打分项权重之和为 0 时，总分显示为 ，后端存 Null。
+
+### 3.2 AI 智能总结 (AI Summary)
+
+- 读取画布全量非空数据生成优劣势报告。
+- 异常流：有效单元格 < 4 个时按钮置灰；调用限时 15s，超时触发降级提示；Redis 限频 2次/分钟。
+
+---
+
+## 四、 商业化权限矩阵 (Paywall Triggers)
+
+| 功能模块 | Free (免费版) | Pro (专业版) | 触发 Paywall 时机 |
+| --- | --- | --- | --- |
+| **画布容量** | 5 选项 x 3 维度 | 10 选项 x 10 维度 | 达到上限后点击“新增行/列”时 |
+| **列类型** | 信息列、数值列 | 包含 Free + **智能计分列** | 下拉菜单中点击“计分列”时 |
+| **AI 总结** | 终身免费体验 3 次 | 50 次 / 月 | 免费额度耗尽后点击 AI 按钮时 |
+| **导出格式** | 带水印 PNG | 无水印 PNG / CSV | 点击无水印/CSV 选项时 |
+
+---
+
+## 五、 给 antigravity 的开发指令与架构基建 (System Prompt)
+
+> **以下内容为前端系统初始化与规范指令，请 antigravity 严格执行。**
+> 
+
+### 5.1 UI/UX 视觉与设计系统 (多巴胺风格)
+
+- **品牌主色**：**靛蓝 (Indigo, `indigo-500`)**。
+- **背景与层次**：底层背景使用 `bg-slate-50`，核心操作区卡片使用 `bg-white`。
+- **圆角与阴影**：卡片与弹窗使用大圆角 `rounded-2xl`，配合大弥散阴影 `shadow-xl shadow-indigo-900/5`。
+- **高光交互**：
+    - 表格行悬停：`hover:bg-indigo-50/50`。
+    - 计分 Badge：0-3分珊瑚红 (`rose`)，4-6分琥珀黄 (`amber`)，7-8分薄荷绿 (`emerald`)，9-10分品牌渐变 (`bg-gradient-to-r from-indigo-500 to-violet-500`)。
+
+### 5.2 前端技术栈与依赖约束
+
+- 框架：Vue 3 (Composition API) + TypeScript + Vite + pnpm。
+- UI 库：`tailwindcss` + `shadcn-vue` (严禁使用 Element Plus 等重型库)。
+- 核心依赖：`@tanstack/vue-virtual` (强制用于表格渲染)、`@vueuse/core` (防抖等钩子)、`pinia` (全局状态)。
+
+
+

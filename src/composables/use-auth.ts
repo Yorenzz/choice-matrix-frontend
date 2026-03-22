@@ -1,37 +1,54 @@
-import { storeToRefs } from 'pinia'
-
-import { useAuthStore } from '@/store'
+import { loginApi, registerApi, type LoginParams, type RegisterParams } from '@/api/auth'
+import { useAuthStore } from '@/store/auth'
+import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+import { toast } from 'vue-sonner'
 
 export function useAuth() {
   const router = useRouter()
-
   const authStore = useAuthStore()
-  const { isLogin } = storeToRefs(authStore)
   const loading = ref(false)
 
   function logout() {
-    isLogin.value = false
-
+    authStore.clearAuth()
     router.push({ path: '/auth/sign-in' })
   }
 
   function toHome() {
-    router.push({ path: '/workspace' })
+    router.push({ path: '/dashboard' }) // Redirect to dashboard
   }
 
-  async function login() {
+  async function login(params: LoginParams) {
     loading.value = true
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    // mock login
-    isLogin.value = true
-    loading.value = false
-
-    const redirect = router.currentRoute.value.query.redirect as string
-    if (!redirect || redirect.startsWith('//')) {
-      toHome()
+    try {
+      const { data } = await loginApi(params)
+      authStore.setAuth(data.token, data.user)
+      
+      const redirect = router.currentRoute.value.query.redirect as string
+      if (!redirect || redirect.startsWith('//')) {
+        toHome()
+      } else {
+        router.push(redirect)
+      }
+    } catch (error: any) {
+      toast.error(error.message || '登录失败 / Login failed')
+      console.error(error)
+    } finally {
+      loading.value = false
     }
-    else {
-      router.push(redirect)
+  }
+
+  async function register(params: RegisterParams) {
+    loading.value = true
+    try {
+      await registerApi(params)
+      // Login automatically or go back to login page
+      router.push({ path: '/auth/sign-in' })
+    } catch (error: any) {
+      toast.error(error.message || '注册失败 / Registration failed')
+      console.error(error)
+    } finally {
+      loading.value = false
     }
   }
 
@@ -39,5 +56,6 @@ export function useAuth() {
     loading,
     logout,
     login,
+    register,
   }
 }

@@ -10,8 +10,8 @@ import tasks from './data/tasks.json'
 
 <template>
   <BasicPage
-    title="Tasks"
-    description="Tasks description"
+    title="决策列表 (Decisions)"
+    description="查看与管理您创建的所有决策对比流"
     sticky
   >
     <template #actions>

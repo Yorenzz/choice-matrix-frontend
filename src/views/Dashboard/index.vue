@@ -17,8 +17,8 @@ const activeTab = ref(tabs.value[0].value)
 
 <template>
   <BasicPage
-    title="workspace"
-    description="workspace description"
+    title="工作台 (Workspace)"
+    description="管理您的所有项目与决策画布"
     sticky
   >
     <template #actions>

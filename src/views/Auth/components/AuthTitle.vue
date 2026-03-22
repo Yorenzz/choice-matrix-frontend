@@ -9,7 +9,7 @@ const logo = computed(() => {
 
 <template>
   <h1 class="flex items-center gap-2 text-xl font-bold">
-    <img :src="logo">
-    <span>Shadcn Vue Admin</span>
+    <img :src="logo" alt="ChoiceMatrix Logo" class="w-8 h-8">
+    <span class="text-indigo-600">ChoiceMatrix</span>
   </h1>
 </template>

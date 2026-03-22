@@ -13,10 +13,10 @@ export const useSidebar = () => {
 
   const navData = ref<NavGroup[]> ([
     {
-      title: 'General',
+      title: '核心功能',
       items: [
-        { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-        { title: 'Tasks', url: '/tasks', icon: ListTodo },
+        { title: '工作台', url: '/dashboard', icon: LayoutDashboard },
+        { title: '决策列表', url: '/tasks', icon: ListTodo },
       ],
     },
     {

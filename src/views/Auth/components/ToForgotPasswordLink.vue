@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <UiButton variant="link" class="text-muted-foreground" @click="$router.push('/auth/forgot-password')">
-    Forgot password?
+  <UiButton variant="link" class="text-indigo-600 hover:text-indigo-700" @click="$router.push('/auth/forgot-password')">
+    忘记密码？
   </UiButton>
 </template>
