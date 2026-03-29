@@ -1,8 +1,5 @@
-<script lang="ts" setup>
-</script>
-
 <template>
-  <UiButton variant="link" class="px-0 font-normal underline">
+  <UiButton type="button" variant="link" class="auth-link-button auth-link-button--inline">
     服务条款
   </UiButton>
 </template>

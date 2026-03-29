@@ -1,28 +1,17 @@
-const TOKEN_KEY = 'auth_token'
+const ACCESS_TOKEN_KEY = 'auth_token'
 
-/**
- * 设置认证token
- * @param token 用户token
- */
 export const setToken = (token: string): void => {
-  localStorage.setItem(TOKEN_KEY, token)
+  localStorage.setItem(ACCESS_TOKEN_KEY, token)
 }
 
-/**
- * 获取认证token
- * @returns 存储的token
- */
-export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY)
+export const getToken = (): string | null => localStorage.getItem(ACCESS_TOKEN_KEY)
 
-/**
- * 移除token
- */
 export const removeToken = (): void => {
-  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(ACCESS_TOKEN_KEY)
 }
 
-/**
- * 判断是否已登录
- * @returns 是否已登录
- */
+export const clearAuthTokens = (): void => {
+  removeToken()
+}
+
 export const isLoggedIn = (): boolean => !!getToken()

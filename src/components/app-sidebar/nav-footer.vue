@@ -3,11 +3,8 @@ import type { User } from './types'
 
 import {
   BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
-  Sparkles,
   UserRoundCog,
 } from 'lucide-vue-next'
 
@@ -76,40 +73,20 @@ const { isMobile, open } = useSidebar()
 
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem @click="$router.push('/billing/')">
-              <Sparkles />
-              Upgrade to Pro
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem @click="$router.push('/billing?type=billing')">
-              <CreditCard />
-              Billing
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem @click="$router.push('/settings/')">
+            <DropdownMenuItem @click="$router.push('/profile')">
               <UserRoundCog />
-              Profile
+              个人中心
             </DropdownMenuItem>
-            <DropdownMenuItem @click="$router.push('/settings/account')">
+            <DropdownMenuItem @click="$router.push('/profile')">
               <BadgeCheck />
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuItem @click="$router.push('/settings/notifications')">
-              <Bell />
-              Notifications
+              账号信息
             </DropdownMenuItem>
           </DropdownMenuGroup>
 
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="logout">
             <LogOut />
-            Log out
+            退出登录
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

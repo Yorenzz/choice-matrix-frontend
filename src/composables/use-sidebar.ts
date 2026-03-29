@@ -1,40 +1,36 @@
 import type { NavGroup } from '@/components/app-sidebar/types'
-
-import { BellDot, Bug, CreditCard, LayoutDashboard, ListTodo, Palette, PictureInPicture2, SquareUserRound, User, Wrench } from 'lucide-vue-next'
+import { Bug, LayoutDashboard, ListTodo, SquareUserRound, User } from 'lucide-vue-next'
 
 export const useSidebar = () => {
   const settingsNavItems = [
-    { title: 'Profile', url: '/settings/', icon: User },
-    { title: 'Account', url: '/settings/account', icon: Wrench },
-    { title: 'Appearance', url: '/settings/appearance', icon: Palette },
-    { title: 'Notifications', url: '/settings/notifications', icon: BellDot },
-    { title: 'Display', url: '/settings/display', icon: PictureInPicture2 },
+    { title: '个人中心', url: '/profile', icon: User },
   ]
 
-  const navData = ref<NavGroup[]> ([
+  const navData = ref<NavGroup[]>([
     {
       title: '核心功能',
       items: [
         { title: '工作台', url: '/dashboard', icon: LayoutDashboard },
         { title: '决策列表', url: '/tasks', icon: ListTodo },
+        { title: '个人中心', url: '/profile', icon: User },
       ],
     },
     {
-      title: 'Pages',
+      title: '辅助页面',
       items: [
         {
-          title: 'Auth',
+          title: '认证',
           icon: SquareUserRound,
           items: [
-            { title: 'Sign In', url: '/auth/sign-in' },
-            { title: 'Sign In(2 Col)', url: '/auth/sign-in-2' },
-            { title: 'Sign Up', url: '/auth/sign-up' },
-            { title: 'Forgot Password', url: '/auth/forgot-password' },
-            { title: 'OTP', url: '/auth/otp' },
+            { title: '登录', url: '/auth/sign-in' },
+            { title: '登录（双栏）', url: '/auth/sign-in-2' },
+            { title: '注册', url: '/auth/sign-up' },
+            { title: '忘记密码', url: '/auth/forgot-password' },
+            { title: '验证码', url: '/auth/otp' },
           ],
         },
         {
-          title: 'Errors',
+          title: '错误页',
           icon: Bug,
           items: [
             { title: '401 | Unauthorized', url: '/errors/401' },
@@ -48,18 +44,7 @@ export const useSidebar = () => {
     },
   ])
 
-  const otherPages = ref<NavGroup[]>([
-    {
-      title: 'Other',
-      items: [
-        {
-          title: 'Plans & Pricing',
-          icon: CreditCard,
-          url: '/billing',
-        },
-      ],
-    },
-  ])
+  const otherPages = ref<NavGroup[]>([])
 
   return {
     navData,

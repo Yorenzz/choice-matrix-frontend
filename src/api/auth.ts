@@ -1,3 +1,4 @@
+import type { CurrentUser } from '@/api/profile'
 import { api } from '@/request'
 
 export interface LoginParams {
@@ -11,16 +12,11 @@ export interface RegisterParams {
   nickname?: string
 }
 
-export interface UserInfo {
-  id: number
-  email: string
-  nickname: string
-  pro: boolean
-  credits?: number
-}
+export type UserInfo = CurrentUser
 
 export interface LoginResult {
   token: string
+  access_token: string
   user: UserInfo
 }
 
@@ -32,14 +28,28 @@ export function loginApi(data: LoginParams) {
 }
 
 export function registerApi(data: RegisterParams) {
-  return api.post<null>({
+  return api.post<LoginResult>({
     url: '/auth/register',
     data,
   })
 }
 
+export function refreshTokenApi() {
+  return api.post<LoginResult>({
+    url: '/auth/refresh',
+    skipAuthRefresh: true,
+  })
+}
+
+export function logoutApi() {
+  return api.post<null>({
+    url: '/auth/logout',
+    skipAuthRefresh: true,
+  })
+}
+
 export function getUserInfoApi() {
-  return api.get<UserInfo>({
+  return api.get<CurrentUser>({
     url: '/auth/me',
   })
 }

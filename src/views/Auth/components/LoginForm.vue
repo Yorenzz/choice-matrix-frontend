@@ -1,7 +1,8 @@
 <script lang="ts" setup>
+import { Eye, EyeOff } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useAuth } from '@/composables/use-auth'
-
+import { RouterPath } from '@/constants/route-path'
 import GitHubButton from './GithubButton.vue'
 import GoogleButton from './GoogleButton.vue'
 import PrivacyPolicyButton from './PrivacyPolicyButton.vue'
@@ -13,6 +14,7 @@ const form = ref({
   email: '',
   password: '',
 })
+const showPassword = ref(false)
 
 const handleLogin = () => {
   login(form.value)
@@ -20,60 +22,106 @@ const handleLogin = () => {
 </script>
 
 <template>
-  <UiCard class="w-full max-w-sm rounded-[2rem] shadow-2xl shadow-indigo-900/10 border border-white/60 !bg-white/40 backdrop-blur-2xl">
-    <UiCardHeader>
-      <UiCardTitle class="text-2xl font-bold tracking-tight text-slate-900">
+  <UiCard class="auth-card">
+    <UiCardHeader class="auth-card__header">
+      <div class="auth-card__badge">
         欢迎回来
-      </UiCardTitle>
-      <UiCardDescription class="text-slate-500 mt-2">
-        输入您的邮箱账号与密码组合，即刻开启结构化决策。
-        <br>
-        <span class="mt-2 block">
+      </div>
+      <div class="space-y-2">
+        <UiCardTitle class="auth-card__title">
+          登录你的决策工作台
+        </UiCardTitle>
+        <UiCardDescription class="auth-card__description">
+          继续查看你的矩阵、项目进度和 AI 总结，把上一次的判断接着做完。
+        </UiCardDescription>
+      </div>
+    </UiCardHeader>
+
+    <UiCardContent>
+      <form class="auth-form" @submit.prevent="handleLogin">
+        <div class="auth-field">
+          <UiLabel for="email" class="auth-field__label">
+            邮箱地址
+          </UiLabel>
+          <UiInput
+            id="email"
+            v-model="form.email"
+            type="email"
+            placeholder="me@example.com"
+            required
+            class="auth-input"
+          />
+        </div>
+
+        <div class="auth-field">
+          <div class="auth-field__row">
+            <UiLabel for="password" class="auth-field__label">
+              密码
+            </UiLabel>
+            <ToForgotPasswordLink />
+          </div>
+
+          <div class="relative">
+            <UiInput
+              id="password"
+              v-model="form.password"
+              :type="showPassword ? 'text' : 'password'"
+              required
+              placeholder="请输入密码"
+              class="auth-input auth-input--password"
+            />
+            <button
+              type="button"
+              class="auth-input__toggle"
+              :aria-label="showPassword ? '隐藏密码' : '显示密码'"
+              @click="showPassword = !showPassword"
+            >
+              <EyeOff v-if="showPassword" class="size-4" />
+              <Eye v-else class="size-4" />
+            </button>
+          </div>
+        </div>
+
+        <UiButton type="submit" class="auth-submit" :disabled="loading">
+          <UiSpinner v-if="loading" class="mr-2" />
+          进入 ChoiceMatrix
+        </UiButton>
+
+        <UiButton
+          type="button"
+          variant="outline"
+          class="h-11 w-full rounded-2xl border-slate-200 bg-white/80 text-slate-700 hover:bg-slate-50"
+          @click="$router.push(RouterPath.GUEST_MATRIX)"
+        >
+          先体验游客矩阵
+        </UiButton>
+
+        <UiSeparator label="或使用以下方式继续" class="auth-divider" />
+
+        <div class="auth-socials">
+          <GitHubButton />
+          <GoogleButton />
+        </div>
+
+        <div class="auth-inline-note">
           还没有账号？
           <UiButton
-            variant="link" class="px-0 text-indigo-600 font-semibold"
+            type="button"
+            variant="link"
+            class="auth-inline-note__action"
             @click="$router.push('/auth/sign-up')"
           >
             立即注册
           </UiButton>
-        </span>
-      </UiCardDescription>
-    </UiCardHeader>
-    <UiCardContent class="grid gap-4">
-      <div class="grid gap-2">
-        <UiLabel for="email" class="text-slate-700">
-          邮箱地址
-        </UiLabel>
-        <UiInput id="email" v-model="form.email" type="email" placeholder="输入邮箱... (例: me@example.com)" required class="rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20" />
-      </div>
-      <div class="grid gap-2">
-        <div class="flex items-center justify-between">
-          <UiLabel for="password" class="text-slate-700">
-            密码
-          </UiLabel>
-          <ToForgotPasswordLink class="text-indigo-600 hover:text-indigo-500" />
         </div>
-        <UiInput id="password" v-model="form.password" type="password" required placeholder="*********" class="rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20" />
-      </div>
 
-      <UiButton class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all text-white shadow-md shadow-indigo-600/20" @click="handleLogin" :disabled="loading">
-        <UiSpinner v-if="loading" class="mr-2" />
-        登录系统
-      </UiButton>
-
-      <UiSeparator label="或通过以下方式登录" class="my-2" />
-
-      <div class="flex flex-col items-center justify-between gap-4">
-        <GitHubButton />
-        <GoogleButton />
-      </div>
-
-      <UiCardDescription class="text-center text-xs mt-2 text-slate-400">
-        点击登录即表示您同意我们的
-        <TermsOfServiceButton class="text-indigo-600 hover:underline" />
-        与
-        <PrivacyPolicyButton class="text-indigo-600 hover:underline" />
-      </UiCardDescription>
+        <UiCardDescription class="auth-legal">
+          点击登录即表示你同意我们的
+          <TermsOfServiceButton />
+          和
+          <PrivacyPolicyButton />
+        </UiCardDescription>
+      </form>
     </UiCardContent>
   </UiCard>
 </template>

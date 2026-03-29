@@ -1,41 +1,44 @@
 import type { SidebarData, Team, User } from '../types'
-
-import {
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
-} from 'lucide-vue-next'
-
+import { computed } from 'vue'
+import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-vue-next'
 import { useSidebar } from '@/composables/use-sidebar'
-
-const user: User = {
-  name: 'shadcn',
-  email: 'm@example.com',
-  avatar: '/avatars/shadcn.jpg',
-}
+import { useAuthStore } from '@/store/auth'
 
 const teams: Team[] = [
   {
-    name: 'Acme Inc',
+    name: 'Choice Matrix',
     logo: GalleryVerticalEnd,
-    plan: 'Enterprise',
+    plan: 'Core',
   },
   {
-    name: 'Acme Corp.',
+    name: 'Personal',
     logo: AudioWaveform,
-    plan: 'Startup',
+    plan: 'Workspace',
   },
   {
-    name: 'Evil Corp.',
+    name: 'AI Assistant',
     logo: Command,
-    plan: 'Free',
+    plan: 'Beta',
   },
 ]
 
-const { navData } = useSidebar()
+export const useSidebarData = () => {
+  const authStore = useAuthStore()
+  const { navData } = useSidebar()
 
-export const sidebarData: SidebarData = {
-  user,
-  teams,
-  navMain: navData.value!,
+  const user = computed<User>(() => ({
+    name: authStore.userInfo?.nickname || 'Choice Matrix',
+    email: authStore.userInfo?.email || '未登录',
+    avatar: '',
+  }))
+
+  const sidebarData = computed<SidebarData>(() => ({
+    user: user.value,
+    teams,
+    navMain: navData.value,
+  }))
+
+  return {
+    sidebarData,
+  }
 }

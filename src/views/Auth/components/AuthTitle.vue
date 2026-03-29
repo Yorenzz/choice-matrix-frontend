@@ -8,8 +8,17 @@ const logo = computed(() => {
 </script>
 
 <template>
-  <h1 class="flex items-center gap-2 text-xl font-bold">
-    <img :src="logo" alt="ChoiceMatrix Logo" class="w-8 h-8">
-    <span class="text-indigo-600">ChoiceMatrix</span>
-  </h1>
+  <div class="auth-brand">
+    <div class="auth-brand__mark">
+      <img :src="logo" alt="ChoiceMatrix Logo" class="auth-brand__logo">
+    </div>
+    <div class="auth-brand__copy">
+      <p class="auth-brand__eyebrow">
+        Decision Studio
+      </p>
+      <h1 class="auth-brand__name">
+        ChoiceMatrix
+      </h1>
+    </div>
+  </div>
 </template>

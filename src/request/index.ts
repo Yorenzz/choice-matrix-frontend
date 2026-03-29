@@ -7,43 +7,130 @@ import type {
 } from 'axios'
 import axios from 'axios'
 import qs from 'qs'
+import { RouterPath } from '@/constants/route-path'
+import pinia from '@/plugins/pinia/setup'
 import { ResultEnum } from '@/request/types.ts'
 import router from '@/router'
-import { getToken, removeToken } from '@/utils/auth'
-// import router from '@/router'
+import { useAuthStore } from '@/store/auth'
+import { getToken } from '@/utils/auth'
 
-// 定义响应数据类型
 export interface ResponseData<T = unknown> {
   code: number
   data: T
   message: string
 }
 
-// 创建 axios 实例
+export interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
+  skipAuthRefresh?: boolean
+  _retry?: boolean
+}
+
+interface ExtendedInternalAxiosRequestConfig extends InternalAxiosRequestConfig {
+  skipAuthRefresh?: boolean
+  _retry?: boolean
+}
+
+const resolveApiBaseUrl = () => {
+  const rawBaseUrl = (import.meta.env.VITE_APP_API_BASE_URL || '').trim()
+  if (!rawBaseUrl) {
+    return '/api/v1'
+  }
+
+  return rawBaseUrl.endsWith('/api/v1')
+    ? rawBaseUrl
+    : `${rawBaseUrl.replace(/\/+$/, '')}/api/v1`
+}
+
 const request = axios.create({
-  // API 请求的默认前缀
-  baseURL: import.meta.env.VITE_APP_API_BASE_URL,
-  timeout: 600000, // 请求超时时间
+  baseURL: resolveApiBaseUrl(),
+  timeout: 600000,
   adapter: 'fetch',
+  withCredentials: true,
+})
+
+const refreshClient = axios.create({
+  baseURL: resolveApiBaseUrl(),
+  timeout: 600000,
+  adapter: 'fetch',
+  withCredentials: true,
 })
 
 export type RequestError = AxiosError<{
+  code?: number
   message?: string
   result?: unknown
   errorMessage?: string
 }>
 
-// 异常拦截处理器
-const errorHandler = (error: RequestError): Promise<never> => {
-  const status = error.response?.status
-  const errorMessage = error.response?.data?.errorMessage || error.message || '请求错误'
+let refreshPromise: Promise<string | null> | null = null
 
-  // 根据状态码处理特定错误
+const getAuthStore = () => useAuthStore(pinia)
+
+const redirectToLogin = async () => {
+  const authStore = getAuthStore()
+  authStore.clearAuth()
+
+  if (router.currentRoute.value.path !== RouterPath.LOGIN) {
+    await router.push(RouterPath.LOGIN)
+  }
+}
+
+const refreshAccessToken = async (): Promise<string | null> => {
+  const authStore = getAuthStore()
+  if (!refreshPromise) {
+    refreshPromise = refreshClient.post<ResponseData<{
+      access_token: string
+    }>>('/auth/refresh', {}).then((response) => {
+      const payload = response.data
+      if (!payload || payload.code !== ResultEnum.SUCCESS) {
+        throw new Error(payload?.message || '刷新登录状态失败')
+      }
+
+      authStore.updateAccessToken(payload.data.access_token)
+      return payload.data.access_token
+    }).catch(async (error) => {
+      await redirectToLogin()
+      throw error
+    }).finally(() => {
+      refreshPromise = null
+    })
+  }
+
+  return refreshPromise
+}
+
+const errorHandler = async (error: RequestError): Promise<never> => {
+  const status = error.response?.status
+  const originalRequest = error.config as ExtendedInternalAxiosRequestConfig | undefined
+  const errorMessage = error.response?.data?.message || error.response?.data?.errorMessage || error.message || '请求错误'
+
+  if (
+    status === 401
+    && originalRequest
+    && !originalRequest.skipAuthRefresh
+    && !originalRequest._retry
+  ) {
+    originalRequest._retry = true
+
+    try {
+      const newAccessToken = await refreshAccessToken()
+      if (!newAccessToken) {
+        await redirectToLogin()
+        return Promise.reject(error)
+      }
+
+      originalRequest.headers = originalRequest.headers || {}
+      ;(originalRequest.headers as AxiosRequestHeaders).Authorization = `Bearer ${newAccessToken}`
+      return request(originalRequest)
+    }
+    catch (refreshError) {
+      return Promise.reject(refreshError)
+    }
+  }
+
   switch (status) {
     case 401:
-      // 未授权，可以跳转到登录页
-      removeToken()
-      router.push('/login')
+      await redirectToLogin()
       console.error('未授权，请重新登录')
       break
     case 403:
@@ -62,14 +149,13 @@ const errorHandler = (error: RequestError): Promise<never> => {
   return Promise.reject(error)
 }
 
-// 请求拦截器
 const requestHandler = (
-  config: InternalAxiosRequestConfig,
-): InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig> => {
+  config: ExtendedInternalAxiosRequestConfig,
+): ExtendedInternalAxiosRequestConfig | Promise<ExtendedInternalAxiosRequestConfig> => {
   const data = config.data || false
+  const token = getAuthStore().token || getToken()
+  config.headers = config.headers || {}
 
-  // 添加token到请求头
-  const token = getToken()
   if (token) {
     ;(config.headers as AxiosRequestHeaders).Authorization = `Bearer ${token}`
   }
@@ -80,23 +166,20 @@ const requestHandler = (
   ) {
     config.data = qs.stringify(data)
   }
+
   return config
 }
 
-// 添加请求拦截器
 request.interceptors.request.use(requestHandler, errorHandler)
 
-// 响应拦截器
 const responseHandler = (response: AxiosResponse) => {
   const { data } = response
   if (!data) {
-    throw new Error('请求没有返回值')
+    throw new Error('请求没有返回数据')
   }
 
-  // 未设置状态码则默认成功状态
   const code = data.code || 200
 
-  // 二进制数据则直接返回
   if (response.request.responseType === 'blob' || response.request.responseType === 'arraybuffer') {
     return response
   }
@@ -104,34 +187,29 @@ const responseHandler = (response: AxiosResponse) => {
   if (code !== ResultEnum.SUCCESS) {
     throw new Error(data.message || '请求失败')
   }
-  else {
-    return data
-  }
+
+  return data
 }
 
-// 添加响应拦截器
 request.interceptors.response.use(responseHandler, errorHandler)
 
-// 创建取消令牌
 export const createCancelToken = axios.CancelToken.source
 
-// 定义文件上传配置类型
-interface UploadRequestConfig extends AxiosRequestConfig {
+interface UploadRequestConfig extends ExtendedAxiosRequestConfig {
   headersType?: string
   data?: FormData | Record<string, unknown>
 }
 
-// API方法集合
 export const api = {
-  get: <T>(option: AxiosRequestConfig): Promise<ResponseData<T>> => {
+  get: <T>(option: ExtendedAxiosRequestConfig): Promise<ResponseData<T>> => {
     return request({ method: 'GET', ...option })
   },
 
-  post: <T>(option: AxiosRequestConfig): Promise<ResponseData<T>> => {
+  post: <T>(option: ExtendedAxiosRequestConfig): Promise<ResponseData<T>> => {
     return request({ method: 'POST', ...option })
   },
 
-  stream: (option: AxiosRequestConfig): Promise<ReadableStream<Uint8Array> | null> => {
+  stream: (option: ExtendedAxiosRequestConfig): Promise<ReadableStream<Uint8Array> | null> => {
     return request({
       method: 'POST',
       responseType: 'stream',
@@ -144,15 +222,15 @@ export const api = {
     })
   },
 
-  delete: <T>(option: AxiosRequestConfig): Promise<ResponseData<T>> => {
+  delete: <T>(option: ExtendedAxiosRequestConfig): Promise<ResponseData<T>> => {
     return request({ method: 'DELETE', ...option })
   },
 
-  put: <T>(option: AxiosRequestConfig): Promise<ResponseData<T>> => {
+  put: <T>(option: ExtendedAxiosRequestConfig): Promise<ResponseData<T>> => {
     return request({ method: 'PUT', ...option })
   },
 
-  download: (option: AxiosRequestConfig): Promise<Blob> => {
+  download: (option: ExtendedAxiosRequestConfig): Promise<Blob> => {
     return request({
       method: 'GET',
       responseType: 'blob',
@@ -171,7 +249,6 @@ export const api = {
   },
 }
 
-// 请求重试函数
 export const retryRequest = async <T>(requestFn: () => Promise<T>, maxRetries = 3, delay = 1000): Promise<T> => {
   let retries = 0
 
@@ -182,7 +259,7 @@ export const retryRequest = async <T>(requestFn: () => Promise<T>, maxRetries = 
     catch (error) {
       if (retries < maxRetries) {
         retries++
-        console.log(`请求失败，第${retries}次重试...`)
+        console.log(`请求失败，第 ${retries} 次重试...`)
         await new Promise(resolve => setTimeout(resolve, delay))
         return execute()
       }

@@ -69,6 +69,7 @@ declare global {
   const useAxios: typeof import('../composables/use-axios').useAxios
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
+  const useGuestMatrixStore: typeof import('../store/guest-matrix').useGuestMatrixStore
   const useId: typeof import('vue').useId
   const useModal: typeof import('../composables/use-modal').useModal
   const useModel: typeof import('vue').useModel
