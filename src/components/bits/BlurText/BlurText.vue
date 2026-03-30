@@ -43,7 +43,9 @@ const buildKeyframes = (
 
   const keyframes: Record<string, Array<string | number>> = {};
   keys.forEach(k => {
-    keyframes[k] = [from[k], ...steps.map(s => s[k])];
+    keyframes[k] = [from[k], ...steps.map(s => s[k])].filter(
+      (value): value is string | number => value !== undefined
+    );
   });
   return keyframes;
 };
@@ -69,7 +71,7 @@ onMounted(() => {
 
   observer = new IntersectionObserver(
     ([entry]) => {
-      if (entry.isIntersecting) {
+      if (entry?.isIntersecting) {
         inView.value = true;
         observer?.unobserve(rootRef.value as Element);
       }

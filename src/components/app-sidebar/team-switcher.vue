@@ -24,7 +24,11 @@ const { teams } = defineProps<{
 
 const { isMobile, open } = useSidebar()
 
-const activeTeam = ref<Team>(teams[0])
+const activeTeam = ref<Team>(teams[0] ?? {
+  name: 'Choice Matrix',
+  logo: Plus,
+  plan: 'Workspace',
+})
 function setActiveTeam(team: Team) {
   activeTeam.value = team
 }

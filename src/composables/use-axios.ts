@@ -2,12 +2,15 @@ import type { AxiosError } from 'axios'
 
 import axios from 'axios'
 
-import env from '@/utils/env'
-
 export function useAxios() {
+  const baseURL = (import.meta.env.VITE_APP_API_BASE_URL || '/api/v1').trim()
+  const normalizedBaseURL = baseURL.endsWith('/api/v1')
+    ? baseURL
+    : `${baseURL.replace(/\/+$/, '')}/api/v1`
+
   const axiosInstance = axios.create({
-    baseURL: env.VITE_SERVER_API_URL + env.VITE_SERVER_API_PREFIX,
-    timeout: env.VITE_SERVER_API_TIMEOUT,
+    baseURL: normalizedBaseURL,
+    timeout: 60000,
   })
 
   axiosInstance.interceptors.request.use((config) => {

@@ -25,7 +25,7 @@ export function useAuth() {
   }
 
   function toHome() {
-    router.push({ path: RouterPath.HOME as string })
+    router.push({ path: RouterPath.DASHBOARD as string })
   }
 
   async function login(params: LoginParams) {

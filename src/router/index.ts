@@ -8,11 +8,15 @@ import { getToken } from '@/utils/auth'
 const baseRoutes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: RouterPath.HOME as string,
+    name: 'home',
+    component: () => import('@/views/Home/index.vue'),
+  },
+  {
+    path: '/dashboard',
     component: () => import('@/layouts/index.vue'),
     children: [
       {
-        path: 'dashboard',
+        path: '',
         name: 'dashboard',
         component: () => import('@/views/Dashboard/index.vue'),
         meta: { requiresAuth: true },
@@ -135,7 +139,7 @@ router.beforeEach(async (to) => {
   }
 
   if (guestOnly && hasToken) {
-    return { path: RouterPath.HOME as string }
+    return { path: RouterPath.DASHBOARD as string }
   }
 
   return true

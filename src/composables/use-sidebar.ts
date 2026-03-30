@@ -10,7 +10,7 @@ export const useSidebar = () => {
     {
       title: '核心功能',
       items: [
-        { title: '工作台', url: '/dashboard', icon: LayoutDashboard },
+        { title: '决策工作台', url: '/dashboard', icon: LayoutDashboard },
         { title: '决策列表', url: '/tasks', icon: ListTodo },
         { title: '个人中心', url: '/profile', icon: User },
       ],

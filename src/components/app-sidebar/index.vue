@@ -8,7 +8,7 @@ const { sidebarData } = useSidebarData()
 </script>
 
 <template>
-  <UiSidebar collapsible="icon" class="z-50">
+  <UiSidebar collapsible="icon" class="z-50 border-r border-white/60 bg-white/70 backdrop-blur-[18px]">
     <UiSidebarHeader>
       <TeamSwitcher :teams="sidebarData.teams" />
     </UiSidebarHeader>
