@@ -89,8 +89,8 @@ function parseScore(value: string) {
 
 <template>
   <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.16),_transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(249,115,22,0.15),_transparent_24%),linear-gradient(135deg,_#f6f8f6_0%,_#f5f8fd_48%,_#fbf6ef_100%)]">
-    <div class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-4 py-5 lg:px-6">
-      <header class="grid gap-4 rounded-[30px] border border-white/70 bg-white/72 px-5 py-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+    <div class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-5 lg:gap-6 lg:px-6">
+      <header class="grid gap-4 rounded-[24px] border border-white/70 bg-white/72 px-4 py-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:rounded-[30px] sm:px-5 sm:py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div class="grid gap-4">
           <div class="inline-flex w-fit items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-white uppercase">
             <Sparkles class="size-3.5" />
@@ -102,7 +102,7 @@ function parseScore(value: string) {
               <input
                 :value="title"
                 type="text"
-                class="w-full border-none bg-transparent p-0 font-[Iowan_Old_Style,Palatino_Linotype,Noto_Serif_SC,serif] text-3xl font-semibold tracking-[-0.05em] text-slate-950 outline-none md:text-5xl"
+                class="w-full border-none bg-transparent p-0 font-[Iowan_Old_Style,Palatino_Linotype,Noto_Serif_SC,serif] text-[2rem] font-semibold tracking-[-0.05em] text-slate-950 outline-none sm:text-4xl md:text-5xl"
                 placeholder="给这次决策起个名字"
                 @input="guestMatrixStore.setTitle(($event.target as HTMLInputElement).value)"
               >
@@ -122,15 +122,15 @@ function parseScore(value: string) {
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3 lg:justify-end">
-          <UiButton type="button" variant="outline" class="h-11 rounded-2xl border-slate-200 bg-white/85 px-4 text-slate-700" @click="resetMatrix">
+        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 lg:justify-end">
+          <UiButton type="button" variant="outline" class="h-11 w-full rounded-2xl border-slate-200 bg-white/85 px-4 text-slate-700 sm:w-auto" @click="resetMatrix">
             <RotateCcw class="mr-2 size-4" />
             重置示例
           </UiButton>
-          <UiButton type="button" variant="outline" class="h-11 rounded-2xl border-slate-200 bg-white/85 px-4 text-slate-700" @click="$router.push(RouterPath.LOGIN)">
+          <UiButton type="button" variant="outline" class="h-11 w-full rounded-2xl border-slate-200 bg-white/85 px-4 text-slate-700 sm:w-auto" @click="$router.push(RouterPath.LOGIN)">
             登录保存
           </UiButton>
-          <UiButton type="button" class="h-11 rounded-2xl bg-slate-950 px-5 text-white shadow-[0_18px_44px_rgba(15,23,42,0.16)]" @click="$router.push(RouterPath.REGISTER)">
+          <UiButton type="button" class="h-11 w-full rounded-2xl bg-slate-950 px-5 text-white shadow-[0_18px_44px_rgba(15,23,42,0.16)] sm:w-auto" @click="$router.push(RouterPath.REGISTER)">
             注册后继续
             <ArrowRight class="ml-2 size-4" />
           </UiButton>
@@ -138,8 +138,8 @@ function parseScore(value: string) {
       </header>
 
       <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div class="overflow-hidden rounded-[30px] border border-white/70 bg-white/82 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-4">
+        <div class="overflow-hidden rounded-[24px] border border-white/70 bg-white/82 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:rounded-[30px]">
+          <div class="flex flex-col gap-3 border-b border-slate-200/80 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5">
             <div>
               <h2 class="text-lg font-semibold text-slate-950">
                 决策画布
@@ -149,25 +149,25 @@ function parseScore(value: string) {
               </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-              <UiButton type="button" variant="outline" class="h-10 rounded-2xl border-slate-200 bg-white px-4 text-slate-700" @click="addDimension">
+            <div class="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+              <UiButton type="button" variant="outline" class="h-10 w-full rounded-2xl border-slate-200 bg-white px-4 text-slate-700 sm:w-auto" @click="addDimension">
                 <Plus class="mr-2 size-4" />
                 新增维度
               </UiButton>
-              <UiButton type="button" class="h-10 rounded-2xl bg-teal-700 px-4 text-white hover:bg-teal-600" @click="addOption">
+              <UiButton type="button" class="h-10 w-full rounded-2xl bg-teal-700 px-4 text-white hover:bg-teal-600 sm:w-auto" @click="addOption">
                 <Plus class="mr-2 size-4" />
                 新增选项
               </UiButton>
             </div>
           </div>
 
-          <div class="overflow-x-auto px-4 py-4">
+          <div class="overflow-x-auto px-3 py-3 sm:px-4 sm:py-4">
             <div class="min-w-max" :style="{ display: 'grid', gap: '0.75rem' }">
               <div
                 class="grid items-stretch gap-3"
                 :style="{ gridTemplateColumns: matrixColumns }"
               >
-                <div class="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div class="rounded-3xl border border-slate-200 bg-slate-50 px-3 py-4 sm:px-4">
                   <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                     选项
                   </p>
@@ -221,7 +221,7 @@ function parseScore(value: string) {
                   </div>
                 </div>
 
-                <div class="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div class="rounded-3xl border border-slate-200 bg-slate-50 px-3 py-4 sm:px-4">
                   <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                     总分
                   </p>
@@ -237,7 +237,7 @@ function parseScore(value: string) {
                 class="grid items-stretch gap-3"
                 :style="{ gridTemplateColumns: matrixColumns }"
               >
-                <div class="rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-[0_12px_34px_rgba(15,23,42,0.04)]">
+                <div class="rounded-3xl border border-slate-200 bg-white px-3 py-4 shadow-[0_12px_34px_rgba(15,23,42,0.04)] sm:px-4">
                   <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0 flex-1">
                       <input
@@ -275,14 +275,14 @@ function parseScore(value: string) {
                     </span>
                   </div>
 
-                  <div class="mt-3 flex items-center gap-3">
+                  <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
                     <input
                       :value="getCell(option.id, dimension.id).score ?? ''"
                       type="range"
                       min="0"
                       max="10"
                       step="1"
-                      class="h-2 flex-1 accent-slate-900"
+                      class="h-2 w-full flex-1 accent-slate-900"
                       @input="guestMatrixStore.updateCellScore(option.id, dimension.id, Number(($event.target as HTMLInputElement).value))"
                     >
                     <input
@@ -291,7 +291,7 @@ function parseScore(value: string) {
                       min="0"
                       max="10"
                       step="1"
-                      class="h-10 w-16 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-teal-600"
+                      class="h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-teal-600 sm:w-16"
                       placeholder="-"
                       @input="guestMatrixStore.updateCellScore(option.id, dimension.id, parseScore(($event.target as HTMLInputElement).value))"
                     >
@@ -306,7 +306,7 @@ function parseScore(value: string) {
                   />
                 </div>
 
-                <div class="rounded-3xl border border-slate-200 bg-slate-950 px-4 py-4 text-white shadow-[0_18px_40px_rgba(15,23,42,0.16)]">
+                <div class="rounded-3xl border border-slate-200 bg-slate-950 px-3 py-4 text-white shadow-[0_18px_40px_rgba(15,23,42,0.16)] sm:px-4">
                   <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
                     Weighted Score
                   </p>
@@ -325,7 +325,7 @@ function parseScore(value: string) {
         </div>
 
         <aside class="grid gap-4">
-          <UiCard class="rounded-[30px] border-white/70 bg-white/82 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+          <UiCard class="rounded-[24px] border-white/70 bg-white/82 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:rounded-[30px]">
             <UiCardHeader class="pb-3">
               <UiCardTitle class="text-xl font-semibold tracking-tight text-slate-950">
                 当前排名
@@ -357,7 +357,7 @@ function parseScore(value: string) {
             </UiCardContent>
           </UiCard>
 
-          <UiCard class="rounded-[30px] border-teal-100 bg-[linear-gradient(180deg,rgba(236,253,245,0.95),rgba(255,255,255,0.92))] shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+          <UiCard class="rounded-[24px] border-teal-100 bg-[linear-gradient(180deg,rgba(236,253,245,0.95),rgba(255,255,255,0.92))] shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:rounded-[30px]">
             <UiCardHeader class="pb-2">
               <UiCardTitle class="text-xl font-semibold tracking-tight text-slate-950">
                 游客模式能做什么

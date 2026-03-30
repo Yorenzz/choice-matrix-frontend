@@ -20,22 +20,22 @@ const { contentLayout } = storeToRefs(themeStore)
 <template>
   <SidebarProvider :default-open="defaultOpen.get(SIDEBAR_COOKIE_NAME)">
     <AppSidebar />
-    <SidebarInset class="w-full max-w-full peer-data-[state=collapsed]:w-[calc(100%-var(--sidebar-width-icon)-1rem)] peer-data-[state=expanded]:w-[calc(100%-var(--sidebar-width))]">
+    <SidebarInset class="w-full max-w-full min-w-0 overflow-x-hidden peer-data-[state=collapsed]:w-[calc(100%-var(--sidebar-width-icon)-1rem)] peer-data-[state=expanded]:w-[calc(100%-var(--sidebar-width))]">
       <header
-        class="flex items-center gap-3 sm:gap-4 h-16 p-4 shrink-0 transition-[width,height] ease-linear"
+        class="flex h-auto min-h-16 flex-wrap items-center gap-3 p-3 sm:gap-4 sm:p-4 shrink-0 transition-[width,height] ease-linear"
       >
         <SidebarTrigger class="-ml-1" />
         <Separator orientation="vertical" class="h-6" />
         <CommandMenuPanel />
         <div class="flex-1" />
-        <div class="ml-auto flex items-center space-x-4">
+        <div class="ml-auto flex items-center gap-2 sm:gap-4">
           <ToggleTheme />
           <ThemePopover />
         </div>
       </header>
       <div
         :class="cn(
-          'p-4 grow',
+          'min-w-0 grow p-3 sm:p-4',
           contentLayout === 'centered' ? 'container mx-auto ' : '',
         )"
       >

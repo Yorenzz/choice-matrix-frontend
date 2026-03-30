@@ -23,10 +23,7 @@ export const useSidebar = () => {
           icon: SquareUserRound,
           items: [
             { title: '登录', url: '/auth/sign-in' },
-            { title: '登录（双栏）', url: '/auth/sign-in-2' },
             { title: '注册', url: '/auth/sign-up' },
-            { title: '忘记密码', url: '/auth/forgot-password' },
-            { title: '验证码', url: '/auth/otp' },
           ],
         },
         {

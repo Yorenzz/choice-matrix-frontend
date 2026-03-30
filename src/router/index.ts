@@ -53,26 +53,10 @@ const baseRoutes: RouteRecordRaw[] = [
         meta: { guestOnly: true },
       },
       {
-        path: 'sign-in-2',
-        name: 'sign-in-2',
-        component: () => import('@/views/Auth/SignIn2.vue'),
-        meta: { guestOnly: true },
-      },
-      {
         path: 'sign-up',
         name: 'sign-up',
         component: () => import('@/views/Auth/SignUp.vue'),
         meta: { guestOnly: true },
-      },
-      {
-        path: 'forgot-password',
-        name: 'forgot-password',
-        component: () => import('@/views/Auth/ForgotPassword.vue'),
-      },
-      {
-        path: 'otp',
-        name: 'otp',
-        component: () => import('@/views/Auth/Otp.vue'),
       },
     ],
   },
