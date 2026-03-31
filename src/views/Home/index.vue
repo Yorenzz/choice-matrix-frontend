@@ -1,5 +1,17 @@
 <script setup lang="ts">
-import { ArrowRight, ChartNoAxesColumn, LayoutDashboard, Sparkles } from 'lucide-vue-next'
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  ChartNoAxesColumn,
+  CheckCircle2,
+  FileText,
+  GraduationCap,
+  LayoutDashboard,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  WandSparkles,
+} from 'lucide-vue-next'
 import { RouterPath } from '@/constants/route-path'
 
 const primaryAction = {
@@ -10,23 +22,82 @@ const primaryAction = {
 
 const highlights = [
   {
-    title: '把判断过程显性化',
-    description: '把方案、维度、权重和评分拆开填写，避免只凭感觉做结论。',
+    title: '把选择拆开看',
+    description: '把候选项、维度和权重放到一张表里，思路会清楚很多。',
+    icon: ChartNoAxesColumn,
+    tone: 'bg-slate-950',
   },
   {
-    title: '先试用，再决定是否登录',
-    description: '游客模式可以立即开始整理思路，确认值得保存时再进入账号体系。',
+    title: '先试再决定',
+    description: '不用先注册，直接进入游客模式就能开始整理。',
+    icon: WandSparkles,
+    tone: 'bg-teal-700',
   },
   {
-    title: '适合产品、方案和个人决策',
-    description: '无论是选项目、比工具、定 offer，首页都先帮你把方法讲清楚。',
+    title: '留下判断依据',
+    description: '除了分数，还能写备注，方便回头复盘和解释。',
+    icon: FileText,
+    tone: 'bg-amber-500',
   },
 ]
 
-const steps = [
-  '写下候选方案，明确你到底在比较什么。',
-  '设置评估维度与权重，让“重要程度”真正进入结果。',
-  '逐项打分并补充备注，得到更稳的排序结论。',
+const examples = [
+  {
+    title: '选 Offer',
+    description: '比较薪资、成长空间、稳定性和通勤成本。',
+    icon: BriefcaseBusiness,
+    tags: ['薪资', '成长空间', '稳定性'],
+  },
+  {
+    title: '选方案',
+    description: '比较上线速度、长期成本和扩展性。',
+    icon: SlidersHorizontal,
+    tags: ['上线速度', '长期成本', '扩展性'],
+  },
+  {
+    title: '选方向',
+    description: '比较兴趣、投入产出和时间成本。',
+    icon: GraduationCap,
+    tags: ['兴趣', '投入产出', '时间成本'],
+  },
+]
+
+const spotlightFeatures = [
+  {
+    badge: '亮点 01',
+    title: '几分钟就能搭好第一张矩阵',
+    description: '打开就能填，不会被复杂流程打断，适合先把犹豫中的选择快速摆出来。',
+    icon: Sparkles,
+  },
+  {
+    badge: '亮点 02',
+    title: '不只看结果，也看为什么',
+    description: '最后不只是一个排序，而是一套更容易讲清楚的判断过程。',
+    icon: ShieldCheck,
+  },
+]
+
+const previewColumns = ['成长', '成本', '稳定']
+
+const previewRows = [
+  {
+    title: 'Offer A',
+    scores: [9, 6, 7],
+    total: '7.8',
+    accent: 'bg-slate-950',
+  },
+  {
+    title: 'Offer B',
+    scores: [7, 8, 8],
+    total: '7.7',
+    accent: 'bg-teal-700',
+  },
+  {
+    title: 'Offer C',
+    scores: [8, 5, 6],
+    total: '6.6',
+    accent: 'bg-amber-500',
+  },
 ]
 </script>
 
@@ -62,7 +133,7 @@ const steps = [
             class="h-11 rounded-2xl border-slate-200/90 bg-white/85 px-4 text-slate-700"
             @click="$router.push(RouterPath.GUEST_MATRIX)"
           >
-            游客入口
+            游客体验
           </UiButton>
           <UiButton
             class="h-11 rounded-2xl px-5 text-white shadow-[0_18px_40px_rgba(15,23,42,0.16)]"
@@ -75,124 +146,290 @@ const steps = [
         </div>
       </header>
 
-      <main class="grid flex-1 items-center gap-6 py-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)] lg:py-8">
-        <section class="auth-shell__fade auth-shell__fade--delay grid gap-6">
-          <div class="space-y-5">
-            <div class="inline-flex w-fit items-center gap-2 rounded-full border border-white/80 bg-white/70 px-4 py-2 text-xs font-semibold tracking-[0.18em] text-slate-700 uppercase shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur">
-              <Sparkles class="size-3.5 text-teal-700" />
-              内容介绍首页
+      <main class="grid flex-1 gap-10 py-6 lg:gap-16 lg:py-8">
+        <section class="grid gap-6">
+          <section class="auth-shell__fade auth-shell__fade--delay grid gap-6">
+            <div class="space-y-5">
+              <div class="inline-flex w-fit items-center gap-2 rounded-full border border-white/80 bg-white/70 px-4 py-2 text-xs font-semibold tracking-[0.18em] text-slate-700 uppercase shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur">
+                <Sparkles class="size-3.5 text-teal-700" />
+                更理性的选择方式
+              </div>
+
+              <div class="space-y-4">
+                <h2 class="max-w-4xl font-display text-[2.7rem] font-semibold leading-[1.02] tracking-[-0.06em] text-slate-950 sm:text-[3.6rem] lg:text-[4.5rem]">
+                  把复杂选择整理成一张清楚的决策矩阵。
+                </h2>
+                <p class="max-w-2xl text-[1rem] leading-8 text-slate-600 sm:text-[1.06rem]">
+                  适合比较多个方案、明确评估标准、留下判断依据。先试用，再决定要不要保存。
+                </p>
+              </div>
+
+              <div class="flex flex-wrap gap-3">
+                <UiButton
+                  class="h-12 rounded-2xl px-5 text-[0.96rem] font-semibold text-white shadow-[0_18px_44px_rgba(15,23,42,0.16)]"
+                  style="background: linear-gradient(135deg,#0f172a 0%,#1f2937 100%)"
+                  @click="$router.push(primaryAction.path)"
+                >
+                  {{ primaryAction.label }}
+                  <ArrowRight class="ml-2 size-4" />
+                </UiButton>
+                <UiButton
+                  variant="outline"
+                  class="h-12 rounded-2xl border-slate-200/90 bg-white/85 px-5 text-[0.96rem] font-semibold text-slate-700"
+                  @click="$router.push(RouterPath.GUEST_MATRIX)"
+                >
+                  先用游客模式体验
+                </UiButton>
+              </div>
+
+              <div class="flex flex-wrap gap-3">
+                <div class="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/75 px-3 py-2 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+                  <CheckCircle2 class="size-4 text-teal-700" />
+                  支持游客体验
+                </div>
+                <div class="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/75 px-3 py-2 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+                  <CheckCircle2 class="size-4 text-teal-700" />
+                  自定义权重
+                </div>
+                <div class="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/75 px-3 py-2 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+                  <CheckCircle2 class="size-4 text-teal-700" />
+                  备注与复盘
+                </div>
+              </div>
             </div>
 
-            <div class="space-y-4">
-              <h2 class="max-w-4xl font-display text-[2.6rem] font-semibold leading-[1.02] tracking-[-0.06em] text-slate-950 sm:text-[3.5rem] lg:text-[4.4rem]">
-                把复杂选择写成一张清晰、可复盘的决策矩阵。
-              </h2>
-              <p class="max-w-2xl text-[1rem] leading-8 text-slate-600 sm:text-[1.06rem]">
-                ChoiceMatrix 适合用来介绍你的评估方式、沉淀比较标准，也方便用户立刻进入游客模式体验，或登录后把内容保存到自己的空间。
+            <div class="grid gap-4 md:grid-cols-3">
+              <UiCard
+                v-for="item in highlights"
+                :key="item.title"
+                class="rounded-[1.75rem] border border-white/80 bg-white/72 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-[18px]"
+              >
+                <UiCardHeader class="gap-3">
+                  <div :class="item.tone" class="flex size-11 items-center justify-center rounded-2xl text-white">
+                    <component :is="item.icon" class="size-5" />
+                  </div>
+                  <UiCardTitle class="text-lg font-semibold tracking-[-0.03em] text-slate-900">
+                    {{ item.title }}
+                  </UiCardTitle>
+                  <UiCardDescription class="text-sm leading-7 text-slate-500">
+                    {{ item.description }}
+                  </UiCardDescription>
+                </UiCardHeader>
+              </UiCard>
+            </div>
+          </section>
+        </section>
+
+        <section class="auth-shell__fade auth-shell__fade--later mt-2 grid gap-4 lg:mt-4">
+          <div class="flex items-center gap-3">
+            <div class="flex size-11 items-center justify-center rounded-2xl bg-white/75 text-slate-900 shadow-[0_16px_36px_rgba(15,23,42,0.08)]">
+              <ChartNoAxesColumn class="size-5" />
+            </div>
+            <div class="space-y-1">
+              <p class="text-[0.72rem] font-semibold tracking-[0.28em] uppercase text-slate-500">
+                Preview
               </p>
-            </div>
-
-            <div class="flex flex-wrap gap-3">
-              <UiButton
-                class="h-12 rounded-2xl px-5 text-[0.96rem] font-semibold text-white shadow-[0_18px_44px_rgba(15,23,42,0.16)]"
-                style="background: linear-gradient(135deg,#0f172a 0%,#1f2937 100%)"
-                @click="$router.push(primaryAction.path)"
-              >
-                {{ primaryAction.label }}
-                <ArrowRight class="ml-2 size-4" />
-              </UiButton>
-              <UiButton
-                variant="outline"
-                class="h-12 rounded-2xl border-slate-200/90 bg-white/85 px-5 text-[0.96rem] font-semibold text-slate-700"
-                @click="$router.push(RouterPath.GUEST_MATRIX)"
-              >
-                先用游客模式体验
-              </UiButton>
+              <h3 class="font-display text-[2rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.3rem]">
+                一个更直观的选择面板
+              </h3>
             </div>
           </div>
 
-          <div class="grid gap-4 md:grid-cols-3">
-            <UiCard
-              v-for="item in highlights"
-              :key="item.title"
-              class="rounded-[1.75rem] border border-white/80 bg-white/72 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-[18px]"
-            >
-              <UiCardHeader class="gap-3">
-                <div class="flex size-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
-                  <ChartNoAxesColumn class="size-5" />
+          <div
+            class="relative overflow-hidden rounded-[2rem] border border-white/80 backdrop-blur-[22px]"
+            style="background: linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.84)); box-shadow: 0 28px 90px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.88)"
+          >
+            <div class="absolute -top-8 right-6 h-24 w-24 rounded-full bg-amber-200/40 blur-3xl" />
+            <div class="absolute -left-6 bottom-10 h-24 w-24 rounded-full bg-teal-200/50 blur-3xl" />
+
+            <div class="relative grid gap-6 px-6 py-6 sm:px-8 sm:py-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+              <div class="grid gap-4">
+                <div class="rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+                  <p class="text-sm font-semibold text-slate-900">
+                    快速看板
+                  </p>
+                  <p class="mt-1 text-sm leading-7 text-slate-500">
+                    用一张面板先把候选项、维度和结果放在一起看。
+                  </p>
                 </div>
-                <UiCardTitle class="text-lg font-semibold tracking-[-0.03em] text-slate-900">
-                  {{ item.title }}
+
+                <div class="grid grid-cols-3 gap-2 lg:grid-cols-1">
+                  <div class="rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-3 text-center lg:text-left">
+                    <p class="text-xs text-slate-500">
+                      候选项
+                    </p>
+                    <p class="mt-1 text-lg font-semibold text-slate-900">
+                      3
+                    </p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-3 text-center lg:text-left">
+                    <p class="text-xs text-slate-500">
+                      维度
+                    </p>
+                    <p class="mt-1 text-lg font-semibold text-slate-900">
+                      3
+                    </p>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-3 text-center lg:text-left">
+                    <p class="text-xs text-slate-500">
+                      备注
+                    </p>
+                    <p class="mt-1 text-lg font-semibold text-slate-900">
+                      已开启
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 lg:flex-col">
+                  <div class="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-2 text-sm font-medium text-teal-700">
+                    <SlidersHorizontal class="size-4" />
+                    自定义权重
+                  </div>
+                  <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
+                    <FileText class="size-4" />
+                    支持备注
+                  </div>
+                  <div class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
+                    <CheckCircle2 class="size-4" />
+                    自动排序
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-[1.75rem] border border-slate-200/80 bg-white/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+                <div class="grid grid-cols-[1.1fr_repeat(3,0.7fr)_0.8fr] gap-2 text-center text-xs font-semibold text-slate-500">
+                  <div class="text-left">
+                    方案
+                  </div>
+                  <div
+                    v-for="column in previewColumns"
+                    :key="column"
+                    class="rounded-xl bg-slate-50 px-2 py-2"
+                  >
+                    {{ column }}
+                  </div>
+                  <div class="rounded-xl bg-slate-950 px-2 py-2 text-white">
+                    总分
+                  </div>
+                </div>
+
+                <div class="mt-3 grid gap-2.5">
+                  <div
+                    v-for="row in previewRows"
+                    :key="row.title"
+                    class="grid grid-cols-[1.1fr_repeat(3,0.7fr)_0.8fr] items-center gap-2"
+                  >
+                    <div class="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3 text-left">
+                      <span :class="row.accent" class="size-2.5 rounded-full" />
+                      <span class="text-sm font-semibold text-slate-900">{{ row.title }}</span>
+                    </div>
+                    <div
+                      v-for="score in row.scores"
+                      :key="`${row.title}-${score}`"
+                      class="rounded-2xl border border-slate-200/80 bg-white px-2 py-3 text-sm font-semibold text-slate-700"
+                    >
+                      {{ score }}
+                    </div>
+                    <div class="rounded-2xl bg-slate-950 px-2 py-3 text-sm font-semibold text-white">
+                      {{ row.total }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="auth-shell__fade auth-shell__fade--later mt-4 grid gap-4 lg:mt-8">
+          <div class="flex items-center gap-3">
+            <div class="flex size-11 items-center justify-center rounded-2xl bg-white/75 text-slate-900 shadow-[0_16px_36px_rgba(15,23,42,0.08)]">
+              <BriefcaseBusiness class="size-5" />
+            </div>
+            <div class="space-y-1">
+              <p class="text-[0.72rem] font-semibold tracking-[0.28em] uppercase text-slate-500">
+                Use Cases
+              </p>
+              <h3 class="font-display text-[2rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.3rem]">
+                常见的三种使用场景
+              </h3>
+            </div>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-3">
+            <UiCard
+              v-for="example in examples"
+              :key="example.title"
+              class="rounded-[2rem] border border-white/80 bg-white/78 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-[18px]"
+            >
+              <UiCardHeader class="gap-4">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex size-11 items-center justify-center rounded-2xl bg-teal-700 text-white">
+                    <component :is="example.icon" class="size-5" />
+                  </div>
+                  <CheckCircle2 class="size-5 text-slate-300" />
+                </div>
+                <div class="space-y-2">
+                  <UiCardTitle class="text-xl font-semibold tracking-[-0.03em] text-slate-900">
+                    {{ example.title }}
+                  </UiCardTitle>
+                  <UiCardDescription class="text-sm leading-7 text-slate-500">
+                    {{ example.description }}
+                  </UiCardDescription>
+                </div>
+              </UiCardHeader>
+              <UiCardContent class="flex flex-wrap gap-2">
+                <span
+                  v-for="tag in example.tags"
+                  :key="tag"
+                  class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600"
+                >
+                  {{ tag }}
+                </span>
+              </UiCardContent>
+            </UiCard>
+          </div>
+        </section>
+
+        <section class="auth-shell__fade auth-shell__fade--later mt-4 grid gap-4 lg:mt-8">
+          <div class="flex items-center gap-3">
+            <div class="flex size-11 items-center justify-center rounded-2xl bg-white/75 text-slate-900 shadow-[0_16px_36px_rgba(15,23,42,0.08)]">
+              <ShieldCheck class="size-5" />
+            </div>
+            <div class="space-y-1">
+              <p class="text-[0.72rem] font-semibold tracking-[0.28em] uppercase text-slate-500">
+                Why It Helps
+              </p>
+              <h3 class="font-display text-[2rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.3rem]">
+                两个值得强调的点
+              </h3>
+            </div>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-2">
+            <UiCard
+              v-for="feature in spotlightFeatures"
+              :key="feature.title"
+              class="rounded-[2rem] border border-white/80 bg-white/78 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-[18px]"
+            >
+              <UiCardHeader class="gap-4">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="w-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-amber-700 uppercase">
+                    {{ feature.badge }}
+                  </span>
+                  <div class="flex size-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                    <component :is="feature.icon" class="size-5" />
+                  </div>
+                </div>
+                <UiCardTitle class="font-display text-[1.65rem] font-semibold tracking-[-0.04em] text-slate-950">
+                  {{ feature.title }}
                 </UiCardTitle>
-                <UiCardDescription class="text-sm leading-7 text-slate-500">
-                  {{ item.description }}
+                <UiCardDescription class="text-sm leading-7 text-slate-500 sm:text-base">
+                  {{ feature.description }}
                 </UiCardDescription>
               </UiCardHeader>
             </UiCard>
           </div>
         </section>
-
-        <aside class="auth-shell__fade auth-shell__fade--later">
-          <div
-            class="rounded-[2rem] border border-white/80 backdrop-blur-[22px]"
-            style="background: linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.84)); box-shadow: 0 28px 90px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.88)"
-          >
-            <div class="grid gap-5 px-6 py-6 sm:px-8 sm:py-7">
-              <div class="space-y-2">
-                <p class="text-[0.72rem] font-semibold tracking-[0.28em] uppercase text-slate-500">
-                  How It Works
-                </p>
-                <h3 class="font-display text-[1.5rem] font-semibold tracking-[-0.04em] text-slate-900 sm:text-[1.75rem]">
-                  首页内容建议结构
-                </h3>
-                <p class="text-[0.94rem] leading-7 text-slate-500">
-                  这一块可以承担网站介绍职责，同时自然承接游客入口与登录入口，不会让页面像纯表单一样单薄。
-                </p>
-              </div>
-
-              <div class="grid gap-3">
-                <div
-                  v-for="(step, index) in steps"
-                  :key="step"
-                  class="flex gap-4 rounded-[1.5rem] border border-slate-200/80 bg-slate-50/80 px-4 py-4"
-                >
-                  <div class="flex size-9 shrink-0 items-center justify-center rounded-2xl bg-white text-sm font-semibold text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                    0{{ index + 1 }}
-                  </div>
-                  <p class="text-sm leading-7 text-slate-600">
-                    {{ step }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="grid gap-3 rounded-[1.5rem] bg-slate-950 px-5 py-5 text-white shadow-[0_18px_44px_rgba(15,23,42,0.16)]">
-                <p class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-300">
-                  Entry
-                </p>
-                <p class="text-sm leading-7 text-slate-300">
-                  现在可以直接进入本地工作台体验完整前端流程；如果你只想快速试填，也仍然可以走游客矩阵。
-                </p>
-                <div class="flex flex-col gap-2 sm:flex-row">
-                  <UiButton
-                    type="button"
-                    class="h-11 flex-1 rounded-2xl bg-white text-slate-900 hover:bg-slate-100"
-                    @click="$router.push(RouterPath.DASHBOARD)"
-                  >
-                    进入工作台
-                  </UiButton>
-                  <UiButton
-                    type="button"
-                    variant="outline"
-                    class="h-11 flex-1 rounded-2xl border-white/20 bg-white/10 text-white hover:bg-white/15"
-                    @click="$router.push(RouterPath.GUEST_MATRIX)"
-                  >
-                    游客入口
-                  </UiButton>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
       </main>
     </div>
   </section>
