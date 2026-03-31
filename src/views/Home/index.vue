@@ -1,26 +1,12 @@
 <script setup lang="ts">
-import { ArrowRight, ChartNoAxesColumn, LayoutDashboard, LockKeyhole, Sparkles } from 'lucide-vue-next'
-import { computed } from 'vue'
+import { ArrowRight, ChartNoAxesColumn, LayoutDashboard, Sparkles } from 'lucide-vue-next'
 import { RouterPath } from '@/constants/route-path'
-import { useAuthStore } from '@/store/auth'
 
-const authStore = useAuthStore()
-
-const primaryAction = computed(() => {
-  if (authStore.token) {
-    return {
-      label: '进入工作台',
-      path: RouterPath.DASHBOARD as string,
-      icon: LayoutDashboard,
-    }
-  }
-
-  return {
-    label: '登录后继续',
-    path: RouterPath.LOGIN as string,
-    icon: LockKeyhole,
-  }
-})
+const primaryAction = {
+  label: '进入工作台',
+  path: RouterPath.DASHBOARD as string,
+  icon: LayoutDashboard,
+}
 
 const highlights = [
   {
@@ -184,23 +170,23 @@ const steps = [
                   Entry
                 </p>
                 <p class="text-sm leading-7 text-slate-300">
-                  游客入口适合立刻开始试用，登录入口适合保存矩阵、跨设备继续和后续扩展个人内容。
+                  现在可以直接进入本地工作台体验完整前端流程；如果你只想快速试填，也仍然可以走游客矩阵。
                 </p>
                 <div class="flex flex-col gap-2 sm:flex-row">
                   <UiButton
                     type="button"
                     class="h-11 flex-1 rounded-2xl bg-white text-slate-900 hover:bg-slate-100"
-                    @click="$router.push(RouterPath.GUEST_MATRIX)"
+                    @click="$router.push(RouterPath.DASHBOARD)"
                   >
-                    游客入口
+                    进入工作台
                   </UiButton>
                   <UiButton
                     type="button"
                     variant="outline"
                     class="h-11 flex-1 rounded-2xl border-white/20 bg-white/10 text-white hover:bg-white/15"
-                    @click="$router.push(RouterPath.LOGIN)"
+                    @click="$router.push(RouterPath.GUEST_MATRIX)"
                   >
-                    登录入口
+                    游客入口
                   </UiButton>
                 </div>
               </div>

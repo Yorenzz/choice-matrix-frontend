@@ -19,7 +19,17 @@ const baseRoutes: RouteRecordRaw[] = [
         path: '',
         name: 'dashboard',
         component: () => import('@/views/Dashboard/index.vue'),
-        meta: { requiresAuth: true },
+      },
+    ],
+  },
+  {
+    path: '/projects',
+    component: () => import('@/layouts/index.vue'),
+    children: [
+      {
+        path: ':id',
+        name: 'project-detail',
+        component: () => import('@/views/ProjectDetail/index.vue'),
       },
     ],
   },

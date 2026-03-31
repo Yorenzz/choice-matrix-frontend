@@ -69,6 +69,7 @@ declare global {
   const useAxios: typeof import('../composables/use-axios').useAxios
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
+  const useDecisionWorkspaceStore: typeof import('../store/decision-workspace').useDecisionWorkspaceStore
   const useGuestMatrixStore: typeof import('../store/guest-matrix').useGuestMatrixStore
   const useId: typeof import('vue').useId
   const useModal: typeof import('../composables/use-modal').useModal
@@ -93,4 +94,7 @@ declare global {
   // @ts-ignore
   export type { Theme, Radius, ContentLayout } from '../constants/themes'
   import('../constants/themes')
+  // @ts-ignore
+  export type { DecisionColumnType, DecisionFolder, DecisionColumn, DecisionRow, DecisionCell, DecisionSummaryEntry, DecisionAISummary, DecisionProject, DecisionTemplate, RankedRow } from '../store/decision-workspace'
+  import('../store/decision-workspace')
 }
