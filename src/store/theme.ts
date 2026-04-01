@@ -1,13 +1,14 @@
-import type { ContentLayout, Radius, Theme } from '@/constants/themes'
+import type { ContentLayout, Theme } from '@/constants/themes'
+import { PROJECT_RADIUS, PROJECT_THEME } from '@/constants/themes'
 
 import { defineStore } from 'pinia'
 
 export const useThemeStore = defineStore('system-config', () => {
-  const radius = ref(0.5)
-  const setRadius = (newRadius: Radius) => {
-    radius.value = newRadius
+  const radius = ref(PROJECT_RADIUS)
+  const setRadius = () => {
+    radius.value = PROJECT_RADIUS
   }
-  const theme = ref<Theme>('zinc')
+  const theme = ref<Theme>(PROJECT_THEME)
   const setTheme = (newTheme: Theme) => {
     theme.value = newTheme
   }

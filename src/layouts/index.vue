@@ -16,7 +16,7 @@ const { contentLayout } = storeToRefs(themeStore)
 <template>
   <SidebarProvider :default-open="defaultOpen.get(SIDEBAR_COOKIE_NAME)">
     <AppSidebar />
-    <SidebarInset class="w-full max-w-full min-w-0 overflow-x-hidden bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.12),_transparent_24%),radial-gradient(circle_at_bottom_right,_rgba(249,115,22,0.1),_transparent_26%),linear-gradient(135deg,_#f4f7f6_0%,_#f7f9fc_48%,_#fbf7f1_100%)] peer-data-[state=collapsed]:w-[calc(100%-var(--sidebar-width-icon)-1rem)] peer-data-[state=expanded]:w-[calc(100%-var(--sidebar-width))]">
+    <SidebarInset class="cm-page-shell w-full max-w-full min-w-0 overflow-x-hidden peer-data-[state=collapsed]:w-[calc(100%-var(--sidebar-width-icon)-1rem)] peer-data-[state=expanded]:w-[calc(100%-var(--sidebar-width))]">
       <div
         :class="cn(
           'min-w-0 grow p-3 sm:p-4',

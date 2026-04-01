@@ -2,11 +2,10 @@
 import { useEventListener } from '@vueuse/core'
 import { MenuIcon, SearchIcon } from 'lucide-vue-next'
 
-import { CommandDialog, CommandEmpty, CommandInput, CommandList, CommandSeparator } from '@/components/ui/command'
+import { CommandDialog, CommandEmpty, CommandInput, CommandList } from '@/components/ui/command'
 
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Kbd } from '@/components/ui/kbd'
-import CommandChangeTheme from './command-change-theme.vue'
 import CommandToPage from './command-to-page.vue'
 
 const open = ref(false)
@@ -60,8 +59,6 @@ const firstKey = computed(() => navigator?.userAgent.includes('Mac OS') ? '⌘' 
         </CommandEmpty>
 
         <CommandToPage @click="handleOpenChange" />
-        <CommandSeparator />
-        <CommandChangeTheme @click="handleOpenChange" />
       </CommandList>
     </CommandDialog>
   </div>

@@ -17,6 +17,7 @@ import { useDecisionWorkspaceStore } from '@/store/decision-workspace'
 const workspaceStore = useDecisionWorkspaceStore()
 const router = useRouter()
 const { filteredProjects, folders, selectedFolderId, templates } = storeToRefs(workspaceStore)
+const TEMPLATE_EMPTY_VALUE = '__template-empty__'
 
 const newProjectTitle = ref('')
 const newProjectDescription = ref('')
@@ -88,6 +89,10 @@ function createProject() {
   if (project) {
     router.push(`${RouterPath.PROJECTS}/${project.id}`)
   }
+}
+
+function updateSelectedTemplate(value: string) {
+  selectedTemplateId.value = value === TEMPLATE_EMPTY_VALUE ? '' : value
 }
 
 function applyTemplate(templateId: string) {
@@ -234,12 +239,15 @@ function applyTemplate(templateId: string) {
                 class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-900 outline-none"
                 placeholder="一句话写清楚这次决策的目标和约束。"
               />
-              <UiSelect v-model:model-value="selectedTemplateId">
+              <UiSelect
+                :model-value="selectedTemplateId || TEMPLATE_EMPTY_VALUE"
+                @update:model-value="updateSelectedTemplate"
+              >
                 <UiSelectTrigger class="h-11 rounded-2xl border-slate-200 bg-slate-50 text-sm text-slate-900">
                   <UiSelectValue placeholder="从空白项目开始" />
                 </UiSelectTrigger>
                 <UiSelectContent>
-                  <UiSelectItem value="">
+                  <UiSelectItem :value="TEMPLATE_EMPTY_VALUE">
                     从空白项目开始
                   </UiSelectItem>
                   <UiSelectItem

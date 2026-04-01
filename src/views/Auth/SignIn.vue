@@ -14,7 +14,7 @@ const handleLogin = () => {
 </script>
 
 <template>
-  <section class="auth-shell-page relative box-border h-[100dvh] overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.16),_transparent_24%),radial-gradient(circle_at_bottom_right,_rgba(249,115,22,0.12),_transparent_26%),linear-gradient(135deg,_#f4f7f6_0%,_#f7f9fc_48%,_#fbf7f1_100%)]">
+  <section class="auth-shell-page cm-page-shell relative box-border h-[100dvh] overflow-hidden">
     <div class="auth-shell__backdrop" aria-hidden="true">
       <div class="auth-shell__mesh" />
       <div class="auth-shell__spotlight auth-shell__spotlight--one" />
@@ -38,10 +38,7 @@ const handleLogin = () => {
         </h1>
       </div>
 
-      <div
-        class="w-full rounded-[2rem] border border-white/80 backdrop-blur-[22px]"
-        style="background: linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.84)); box-shadow: 0 28px 90px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.88)"
-      >
+      <div class="cm-panel-glass w-full rounded-[2rem] border backdrop-blur-[22px]">
         <div class="grid gap-2 px-6 pt-5 pb-2 sm:px-8 sm:pt-6">
           <div class="space-y-2">
             <h3 class="font-display text-[1.25rem] font-semibold tracking-[-0.04em] text-slate-900 sm:text-[1.5rem]">
@@ -108,8 +105,7 @@ const handleLogin = () => {
           <UiButton
             type="submit"
             :disabled="loading"
-            class="h-[3rem] w-full rounded-2xl text-[0.96rem] font-semibold text-white transition-[transform,box-shadow] duration-150 hover:-translate-y-px active:translate-y-0"
-            style="background: linear-gradient(135deg,#0f172a 0%,#1f2937 100%); box-shadow: 0 20px 40px rgba(15,23,42,0.18)"
+            class="cm-button-primary h-[3rem] w-full rounded-2xl text-[0.96rem] font-semibold text-white transition-[transform,box-shadow] duration-150 hover:-translate-y-px active:translate-y-0"
           >
             <UiSpinner v-if="loading" class="mr-2" />
             进入 ChoiceMatrix

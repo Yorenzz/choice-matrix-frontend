@@ -88,7 +88,7 @@ function parseScore(value: string) {
 </script>
 
 <template>
-  <section class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.16),_transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(249,115,22,0.15),_transparent_24%),linear-gradient(135deg,_#f6f8f6_0%,_#f5f8fd_48%,_#fbf6ef_100%)]">
+  <section class="cm-page-shell--soft min-h-screen">
     <div class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-5 lg:gap-6 lg:px-6">
       <header class="grid gap-4 rounded-[24px] border border-white/70 bg-white/72 px-4 py-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:rounded-[30px] sm:px-5 sm:py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div class="grid gap-4">

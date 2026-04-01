@@ -39,6 +39,7 @@ const workspaceStore = useDecisionWorkspaceStore()
 const { currentProject, folders } = storeToRefs(workspaceStore)
 const route = useRoute()
 const router = useRouter()
+const SELECT_EMPTY_VALUE = '__select-empty__'
 
 const projectTitleDraft = ref('')
 const projectDescriptionDraft = ref('')
@@ -204,7 +205,7 @@ function updateActiveSelectValue(value: unknown) {
     return
 
   updateCell(currentProject.value.id, activeEditorRow.value.id, activeEditorColumn.value.id, {
-    select: typeof value === 'string' && value ? value : null,
+    select: typeof value === 'string' && value && value !== SELECT_EMPTY_VALUE ? value : null,
   })
 }
 
@@ -995,14 +996,14 @@ function backToWorkspace() {
               <div class="grid gap-2">
                 <label class="text-xs font-semibold tracking-[0.16em] uppercase text-slate-500">选择结果</label>
                 <UiSelect
-                  :model-value="activeEditorCell.select ?? ''"
+                  :model-value="activeEditorCell.select ?? SELECT_EMPTY_VALUE"
                   @update:model-value="updateActiveSelectValue"
                 >
                   <UiSelectTrigger class="h-12 rounded-2xl border-slate-200 bg-slate-50 text-sm text-slate-900">
                     <UiSelectValue placeholder="请选择" />
                   </UiSelectTrigger>
                   <UiSelectContent>
-                    <UiSelectItem value="">
+                    <UiSelectItem :value="SELECT_EMPTY_VALUE">
                       请选择
                     </UiSelectItem>
                     <UiSelectItem v-for="option in activeEditorColumn.options" :key="option" :value="option">

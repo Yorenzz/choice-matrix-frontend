@@ -5,13 +5,10 @@ import {
   BadgeCheck,
   ChevronsUpDown,
   LogOut,
-  Palette,
   ShieldCheck,
   UserRoundCog,
 } from 'lucide-vue-next'
 
-import ThemePopover from '@/components/custom-theme/theme-popover.vue'
-import ToggleTheme from '@/components/toggle-theme.vue'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -93,30 +90,6 @@ const { isMobile, open } = useSidebar()
               账号信息
             </DropdownMenuItem>
           </DropdownMenuGroup>
-
-          <DropdownMenuSeparator class="my-2 bg-slate-200/80" />
-          <div class="grid gap-2 px-1 py-1">
-            <div class="flex items-center gap-2 px-2 text-[0.68rem] font-semibold tracking-[0.22em] text-slate-400 uppercase">
-              <Palette class="size-3.5" />
-              外观设置
-            </div>
-            <div class="rounded-[1.35rem] border border-slate-200/80 bg-slate-50/90 p-2">
-              <div class="flex items-center justify-between gap-3 rounded-2xl px-2 py-1.5">
-                <div class="grid gap-0.5">
-                  <span class="text-sm font-medium text-slate-800">黑色模式</span>
-                  <span class="text-xs text-slate-500">切换浅色、深色或跟随系统</span>
-                </div>
-                <ToggleTheme trigger-class="h-10 w-10 rounded-2xl border-slate-200 bg-white shadow-none" />
-              </div>
-              <div class="mt-1 flex items-center justify-between gap-3 rounded-2xl px-2 py-1.5">
-                <div class="grid gap-0.5">
-                  <span class="text-sm font-medium text-slate-800">主题样式</span>
-                  <span class="text-xs text-slate-500">调整主色、圆角和内容布局</span>
-                </div>
-                <ThemePopover trigger-class="h-10 w-10 rounded-2xl border-slate-200 bg-white shadow-none" />
-              </div>
-            </div>
-          </div>
 
           <DropdownMenuSeparator class="my-2 bg-slate-200/80" />
           <DropdownMenuItem class="rounded-2xl px-3 py-2.5 text-sm text-rose-600 focus:text-rose-700" @click="logout">

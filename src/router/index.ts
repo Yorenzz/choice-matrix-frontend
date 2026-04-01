@@ -19,6 +19,7 @@ const baseRoutes: RouteRecordRaw[] = [
         path: '',
         name: 'dashboard',
         component: () => import('@/views/Dashboard/index.vue'),
+        meta: { requiresAuth: true },
       },
     ],
   },
@@ -30,6 +31,7 @@ const baseRoutes: RouteRecordRaw[] = [
         path: ':id',
         name: 'project-detail',
         component: () => import('@/views/ProjectDetail/index.vue'),
+        meta: { requiresAuth: true },
       },
     ],
   },
@@ -125,7 +127,7 @@ router.beforeEach(async (to) => {
 
   authStore.token = localToken || authStore.token
 
-  if ((localToken || requiresAuth || guestOnly) && !authStore.userInfo) {
+  if ((localToken || requiresAuth) && !authStore.userInfo) {
     try {
       await authStore.bootstrapAuth()
     }

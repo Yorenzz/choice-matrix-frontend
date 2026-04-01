@@ -10,6 +10,8 @@ declare global {
   const DEFAULT_PAGE_SIZE: typeof import('../constants/pagination').DEFAULT_PAGE_SIZE
   const EffectScope: typeof import('vue').EffectScope
   const PAGE_SIZES: typeof import('../constants/pagination').PAGE_SIZES
+  const PROJECT_RADIUS: typeof import('../constants/themes').PROJECT_RADIUS
+  const PROJECT_THEME: typeof import('../constants/themes').PROJECT_THEME
   const RADIUS: typeof import('../constants/themes').RADIUS
   const RouterPath: typeof import('../constants/route-path').RouterPath
   const THEMES: typeof import('../constants/themes').THEMES
