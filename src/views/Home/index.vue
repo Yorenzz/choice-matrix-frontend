@@ -91,35 +91,75 @@ const spotlightFeatures = [
   },
 ]
 
-const previewColumns = [
+interface PreviewColumn {
+  title: string
+  weight: string
+}
+
+interface PreviewRow {
+  title: string
+  scores: number[]
+  total: number
+  accent: string
+  note: string
+}
+
+const previewColumns: PreviewColumn[] = [
   { title: '成长', weight: 'W4' },
   { title: '成本', weight: 'W3' },
   { title: '稳定', weight: 'W3' },
 ]
 
-const previewRows = [
+const previewRows: PreviewRow[] = [
   {
     title: 'Offer A',
     scores: [9, 6, 7],
-    total: '7.8',
+    total: 7.8,
     accent: 'bg-slate-950',
     note: '成长空间强，通勤一般',
   },
   {
     title: 'Offer B',
     scores: [7, 8, 8],
-    total: '7.7',
+    total: 7.7,
     accent: 'bg-teal-700',
     note: '整体均衡，风险更低',
   },
   {
     title: 'Offer C',
     scores: [8, 5, 6],
-    total: '6.6',
+    total: 6.6,
     accent: 'bg-amber-500',
     note: '机会不错，但成本偏高',
   },
 ]
+
+const previewStats = [
+  { label: '候选项', value: '3' },
+  { label: '维度', value: '3' },
+]
+
+const previewSignals = [
+  {
+    label: '自定义权重',
+    icon: SlidersHorizontal,
+    tone: 'bg-teal-50 text-teal-700',
+  },
+  {
+    label: '支持备注',
+    icon: FileText,
+    tone: 'bg-amber-50 text-amber-700',
+  },
+  {
+    label: '自动排序',
+    icon: CheckCircle2,
+    tone: 'bg-slate-100 text-slate-700',
+  },
+]
+
+function getPreviewScoreWidth(score: number) {
+  return `${Math.max(16, Math.min(100, score * 10))}%`
+}
 
 onMounted(() => {
   const root = homePageRef.value
@@ -277,107 +317,147 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="cm-panel-glass relative overflow-hidden rounded-[2rem] border backdrop-blur-[22px]">
-            <div class="absolute -top-8 right-6 h-24 w-24 rounded-full bg-amber-200/40 blur-3xl" />
-            <div class="absolute -left-6 bottom-10 h-24 w-24 rounded-full bg-teal-200/50 blur-3xl" />
+          <div class="home-preview relative overflow-hidden rounded-[2.2rem] border backdrop-blur-[22px]">
+            <div class="home-preview__glow home-preview__glow--teal" aria-hidden="true" />
+            <div class="home-preview__glow home-preview__glow--amber" aria-hidden="true" />
+            <div class="home-preview__grid" aria-hidden="true" />
 
-            <div class="relative grid gap-6 px-6 py-6 sm:px-8 sm:py-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-end">
-              <div class="grid content-end gap-4">
-                <div class="rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-                  <p class="text-sm font-semibold text-slate-900">
-                    快速看板
-                  </p>
-                  <p class="mt-1 text-sm leading-7 text-slate-500">
-                    用一张面板先把候选项、维度和结果放在一起看。
-                  </p>
-                </div>
-
-                <div class="grid grid-cols-3 gap-2 lg:grid-cols-1">
-                  <div class="rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-3 text-center lg:text-left">
-                    <p class="text-xs text-slate-500">
-                      候选项
-                    </p>
-                    <p class="mt-1 text-lg font-semibold text-slate-900">
-                      3
-                    </p>
-                  </div>
-                  <div class="rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-3 text-center lg:text-left">
-                    <p class="text-xs text-slate-500">
-                      维度
-                    </p>
-                    <p class="mt-1 text-lg font-semibold text-slate-900">
-                      3
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-
-              <div class="grid gap-4">
-                <div class="rounded-[1.75rem] border border-slate-200/80 bg-white/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-                  <div class="grid grid-cols-[1.25fr_repeat(3,0.7fr)_0.8fr] gap-2 text-center text-xs font-semibold text-slate-500">
-                    <div class="text-left">
-                      方案
+            <div class="relative px-5 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+              <div class="home-preview__sheet">
+                <div class="home-preview__spread">
+                  <div class="home-preview__narrative">
+                    <div class="home-preview__eyebrow">
+                      <Sparkles class="size-3.5 text-teal-700" />
+                      Quick Preview
                     </div>
-                    <div
-                      v-for="column in previewColumns"
-                      :key="column.title"
-                      class="rounded-xl bg-slate-50 px-2 py-2"
-                    >
-                      <div class="flex flex-col items-center gap-1">
-                        <span>{{ column.title }}</span>
-                        <span class="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold tracking-[0.12em] text-teal-700">
-                          {{ column.weight }}
-                        </span>
-                      </div>
-                    </div>
-                    <div class="rounded-xl bg-slate-950 px-2 py-2 text-white">
-                      总分
-                    </div>
-                  </div>
 
-                  <div class="mt-3 grid gap-2.5">
-                    <div
-                      v-for="row in previewRows"
-                      :key="row.title"
-                      class="grid grid-cols-[1.25fr_repeat(3,0.7fr)_0.8fr] items-center gap-2"
-                    >
-                      <div class="rounded-2xl bg-slate-50 px-3 py-3 text-left">
-                        <div class="flex items-center gap-2">
-                          <span :class="row.accent" class="size-2.5 rounded-full" />
-                          <span class="text-sm font-semibold text-slate-900">{{ row.title }}</span>
-                        </div>
-                        <div class="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500">
-                          <FileText class="size-3 text-amber-600" />
-                          <span class="truncate">{{ row.note }}</span>
-                        </div>
-                      </div>
+                    <div class="home-preview__headline">
+                      <p class="home-preview__section-label">
+                        Decision Matrix
+                      </p>
+                      <h4 class="home-preview__title font-display">
+                        快速看板
+                      </h4>
+                      <p class="home-preview__summary">
+                        用一张面板先把候选项、维度和结果放在一起看。
+                      </p>
+                    </div>
+
+                    <div class="home-preview__signal-list">
                       <div
-                        v-for="score in row.scores"
-                        :key="`${row.title}-${score}`"
-                        class="rounded-2xl border border-slate-200/80 bg-white px-2 py-3 text-sm font-semibold text-slate-700"
+                        v-for="signal in previewSignals"
+                        :key="signal.label"
+                        class="home-preview__signal-row"
                       >
-                        {{ score }}
+                        <component :is="signal.icon" class="size-4 text-slate-500" />
+                        <span>{{ signal.label }}</span>
                       </div>
-                      <div class="rounded-2xl bg-slate-950 px-2 py-3 text-sm font-semibold text-white">
-                        {{ row.total }}
+                    </div>
+
+                    <div class="home-preview__figures">
+                      <div
+                        v-for="stat in previewStats"
+                        :key="stat.label"
+                        class="home-preview__figure"
+                      >
+                        <p class="home-preview__figure-label">
+                          {{ stat.label }}
+                        </p>
+                        <p class="home-preview__figure-value">
+                          {{ stat.value }}
+                        </p>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div class="flex flex-wrap items-center justify-start gap-2 px-1">
-                  <div class="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-2 text-sm font-medium text-teal-700">
-                    <SlidersHorizontal class="size-4" />
-                    自定义权重
-                  </div>
-                  <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
-                    <FileText class="size-4" />
-                    支持备注
-                  </div>
-                  <div class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
-                    <CheckCircle2 class="size-4" />
-                    自动排序
+                  <div class="home-preview__feature">
+                    <div class="home-preview__feature-head">
+                      <div>
+                        <p class="home-preview__section-label">
+                          Preview Table
+                        </p>
+                        <h4 class="mt-3 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-[1.4rem]">
+                          一眼看清方案差异
+                        </h4>
+                      </div>
+                      <p class="home-preview__feature-copy">
+                        保持简单，但让结构、重点和分数关系更好看也更好读。
+                      </p>
+                    </div>
+
+                    <div class="home-preview__matrix-paper">
+                      <div class="home-preview__ledger">
+                        <div class="home-preview__ledger-head hidden items-center md:grid">
+                          <div class="home-preview__ledger-title">
+                            方案
+                          </div>
+                          <div
+                            v-for="column in previewColumns"
+                            :key="`${column.title}-head`"
+                            class="home-preview__ledger-head-cell"
+                          >
+                            <p class="text-sm font-semibold text-slate-900">
+                              {{ column.title }}
+                            </p>
+                            <p class="mt-1 text-[11px] text-slate-500">
+                              {{ column.weight }}
+                            </p>
+                          </div>
+                          <div class="home-preview__ledger-total-head">
+                            Total
+                          </div>
+                        </div>
+
+                        <div
+                          v-for="row in previewRows"
+                          :key="row.title"
+                          class="home-preview__ledger-row grid items-stretch"
+                        >
+                          <div class="home-preview__ledger-main">
+                            <span class="home-preview__cell-label md:hidden">方案</span>
+                            <div class="mt-2 flex items-start gap-3 md:mt-0">
+                              <span :class="row.accent" class="mt-1.5 size-2 rounded-full" />
+                              <div class="min-w-0 flex-1">
+                                <div class="text-sm font-semibold text-slate-950">
+                                  {{ row.title }}
+                                </div>
+                                <p class="mt-1.5 text-xs leading-6 text-slate-500">
+                                  {{ row.note }}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div
+                            v-for="(score, scoreIndex) in row.scores"
+                            :key="`${row.title}-${previewColumns[scoreIndex]?.title ?? scoreIndex}`"
+                            class="home-preview__ledger-score"
+                          >
+                            <span class="home-preview__cell-label md:hidden">
+                              {{ previewColumns[scoreIndex]?.title ?? `维度 ${scoreIndex + 1}` }}
+                            </span>
+                            <div class="mt-2 flex items-center justify-between gap-3 md:mt-0">
+                              <span class="hidden text-xs font-semibold tracking-[0.12em] uppercase text-slate-400 md:inline">
+                                {{ previewColumns[scoreIndex]?.title ?? `维度 ${scoreIndex + 1}` }}
+                              </span>
+                              <span class="text-lg font-semibold tracking-[-0.03em] text-slate-800">
+                                {{ score }}
+                              </span>
+                            </div>
+                            <div class="mt-3 home-preview__score-track">
+                              <span class="home-preview__score-fill" :style="{ width: getPreviewScoreWidth(score) }" />
+                            </div>
+                          </div>
+
+                          <div class="home-preview__ledger-total">
+                            <span class="home-preview__cell-label md:hidden">Total</span>
+                            <strong class="mt-2 block text-[1.25rem] font-semibold tracking-[-0.04em] text-slate-950 md:mt-0">
+                              {{ row.total.toFixed(1) }}
+                            </strong>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
