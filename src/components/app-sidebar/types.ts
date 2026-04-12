@@ -29,6 +29,22 @@ export interface User {
   email: string
 }
 
+export interface SidebarWorkspace {
+  title: string
+  subtitle: string
+  projectCount: number
+  folderCount: number
+}
+
+export interface SidebarRecentProject {
+  id: string
+  title: string
+  subtitle: string
+  href: string
+  accentClass: string
+  isFavorite: boolean
+}
+
 export interface Team {
   name: string
   logo: NavIcon
@@ -37,6 +53,7 @@ export interface Team {
 
 export interface SidebarData {
   user: User
-  teams: Team[]
+  workspace: SidebarWorkspace
+  recentProjects: SidebarRecentProject[]
   navMain: NavGroup[]
 }

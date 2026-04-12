@@ -150,6 +150,10 @@ router.beforeEach(async (to) => {
     }
   }
 
+  if (to.path === RouterPath.HOME && hasToken) {
+    return { path: RouterPath.DASHBOARD as string }
+  }
+
   if (guestOnly && hasToken) {
     return { path: RouterPath.DASHBOARD as string }
   }

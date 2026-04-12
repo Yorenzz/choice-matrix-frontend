@@ -2,7 +2,6 @@
 import type { User } from './types'
 
 import {
-  BadgeCheck,
   ChevronsUpDown,
   LogOut,
   ShieldCheck,
@@ -10,10 +9,10 @@ import {
 } from 'lucide-vue-next'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { RouterPath } from '@/constants/route-path'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -27,6 +26,13 @@ const { user } = defineProps<
 
 const { logout } = useAuth()
 const { isMobile, open } = useSidebar()
+
+const userInitials = computed(() => {
+  const raw = user.name.trim().replace(/\s+/g, '')
+  if (!raw)
+    return 'CM'
+  return raw.slice(0, 2).toUpperCase()
+})
 </script>
 
 <template>
@@ -36,12 +42,12 @@ const { isMobile, open } = useSidebar()
         <DropdownMenuTrigger as-child>
           <SidebarMenuButton
             size="lg"
-            class="rounded-2xl border border-transparent px-2.5 py-2 transition-all data-[state=open]:border-white/80 data-[state=open]:bg-white/80 data-[state=open]:text-slate-900"
+            class="app-sidebar__account-button rounded-2xl border border-transparent px-2.5 py-2 transition-all data-[state=open]:border-white/80 data-[state=open]:bg-white/80 data-[state=open]:text-slate-900"
           >
             <Avatar class="size-9 rounded-xl ring-1 ring-slate-200/80">
               <AvatarImage :src="user.avatar" :alt="user.name" />
               <AvatarFallback class="rounded-xl bg-slate-900 text-xs font-semibold text-white">
-                CN
+                {{ userInitials }}
               </AvatarFallback>
             </Avatar>
             <div class="grid flex-1 text-left">
@@ -63,10 +69,11 @@ const { isMobile, open } = useSidebar()
                 <Avatar class="size-11 rounded-2xl ring-1 ring-slate-200/80">
                   <AvatarImage :src="user.avatar" :alt="user.name" />
                   <AvatarFallback class="rounded-2xl bg-slate-900 text-sm font-semibold text-white">
-                    CN
+                    {{ userInitials }}
                   </AvatarFallback>
                 </Avatar>
                 <div class="grid min-w-0 flex-1 gap-0.5">
+                  <span class="text-[0.68rem] font-semibold tracking-[0.18em] uppercase text-slate-400">账户</span>
                   <span class="truncate text-sm font-semibold text-slate-900">{{ user.name }}</span>
                   <span class="truncate text-xs text-slate-500">{{ user.email }}</span>
                 </div>
@@ -80,16 +87,10 @@ const { isMobile, open } = useSidebar()
               账户
             </div>
           </div>
-          <DropdownMenuGroup>
-            <DropdownMenuItem class="rounded-2xl px-3 py-2.5 text-sm text-slate-700" @click="$router.push('/profile')">
-              <UserRoundCog class="size-4 text-slate-500" />
-              个人中心
-            </DropdownMenuItem>
-            <DropdownMenuItem class="rounded-2xl px-3 py-2.5 text-sm text-slate-700" @click="$router.push('/profile')">
-              <BadgeCheck class="size-4 text-slate-500" />
-              账号信息
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+          <DropdownMenuItem class="rounded-2xl px-3 py-2.5 text-sm text-slate-700" @click="$router.push(RouterPath.PROFILE)">
+            <UserRoundCog class="size-4 text-slate-500" />
+            个人中心
+          </DropdownMenuItem>
 
           <DropdownMenuSeparator class="my-2 bg-slate-200/80" />
           <DropdownMenuItem class="rounded-2xl px-3 py-2.5 text-sm text-rose-600 focus:text-rose-700" @click="logout">
