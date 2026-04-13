@@ -8,7 +8,7 @@ import {
   Star,
 } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { RouterPath } from '@/constants/route-path'
@@ -24,24 +24,14 @@ const newProjectDescription = ref('')
 const selectedTemplateId = ref('')
 const newFolderName = ref('')
 
-const workspaceStats = computed(() => {
-  const projects = workspaceStore.projects
-  const favoriteCount = projects.filter(project => project.isFavorite).length
-  const aiReadyCount = projects.filter(project => project.columns.some(column => column.type === 'score')).length
-  const groupedCount = projects.filter(project => project.folderId).length
-
-  return [
-    { label: '工作台项目', value: `${projects.length}`, hint: '已经沉淀在当前工作台里的决策事项' },
-    { label: '重点推进', value: `${favoriteCount}`, hint: '被你标记为优先判断的项目' },
-    { label: '可生成摘要', value: `${aiReadyCount}`, hint: '已经具备评分维度，可继续进入项目页分析' },
-    { label: '已归档', value: `${groupedCount}`, hint: '已经归入文件夹，结构更清晰的项目' },
-  ]
-})
-
 const templateGroups = computed(() => ({
   official: templates.value.filter(template => template.isOfficial),
   personal: templates.value.filter(template => !template.isOfficial),
 }))
+
+onMounted(() => {
+  void workspaceStore.ensureLoaded()
+})
 
 function formatDate(value?: string) {
   if (!value)
@@ -55,54 +45,66 @@ function formatDate(value?: string) {
   }).format(new Date(value))
 }
 
-function openProject(projectId: string) {
-  workspaceStore.selectProject(projectId)
+async function openProject(projectId: string) {
+  await workspaceStore.selectProject(projectId)
   router.push(`${RouterPath.PROJECTS}/${projectId}`)
 }
 
-function createFolder() {
+async function createFolder() {
   const name = newFolderName.value.trim()
   if (!name) {
     toast.error('先写一个文件夹名称')
     return
   }
 
-  workspaceStore.createFolder(name)
+  const folder = await workspaceStore.createFolder(name)
+  if (!folder) {
+    toast.error('鏂囦欢澶瑰垱寤哄け璐?')
+    return
+  }
   newFolderName.value = ''
   toast.success('文件夹已经创建')
 }
 
-function createProject() {
-  workspaceStore.createProject({
+async function createProject() {
+  const project = await workspaceStore.createProject({
     title: newProjectTitle.value.trim() || undefined,
     description: newProjectDescription.value.trim() || undefined,
     folderId: selectedFolderId.value === 'all' || selectedFolderId.value === 'ungrouped' ? null : selectedFolderId.value,
     templateId: selectedTemplateId.value || null,
   })
 
-  const project = workspaceStore.currentProject
+  if (!project) {
+    toast.error('椤圭洰鍒涘缓澶辫触')
+    return
+  }
+
   newProjectTitle.value = ''
   newProjectDescription.value = ''
   selectedTemplateId.value = ''
   toast.success('项目已经创建，正在进入详情页')
 
-  if (project) {
+  if (!project) {
+    toast.error('妯℃澘搴旂敤澶辫触')
+    return
+  }
+
+  {
     router.push(`${RouterPath.PROJECTS}/${project.id}`)
   }
 }
 
-function updateSelectedTemplate(value: string) {
-  selectedTemplateId.value = value === TEMPLATE_EMPTY_VALUE ? '' : value
+function updateSelectedTemplate(value: unknown) {
+  selectedTemplateId.value = typeof value === 'string' && value !== TEMPLATE_EMPTY_VALUE ? value : ''
 }
 
-function applyTemplate(templateId: string) {
-  workspaceStore.createProject({
+async function applyTemplate(templateId: string) {
+  const project = await workspaceStore.createProject({
     title: undefined,
     description: undefined,
     folderId: null,
     templateId,
   })
-  const project = workspaceStore.currentProject
   if (project) {
     toast.success('模板已应用，正在进入项目页')
     router.push(`${RouterPath.PROJECTS}/${project.id}`)
@@ -112,42 +114,18 @@ function applyTemplate(templateId: string) {
 
 <template>
   <section class="grid gap-5">
-    <header class="rounded-[28px] border border-white/75 bg-white/72 px-5 py-4 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-[20px]">
-      <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-        <div class="grid gap-4">
-          <div class="inline-flex w-fit items-center gap-2 rounded-full bg-slate-950 px-3 py-1.5 text-xs font-semibold tracking-[0.2em] text-white uppercase">
-            <LayoutDashboard class="size-3.5" />
-            Workspace
-          </div>
-          <div class="grid gap-2">
-            <h1 class="font-display text-[1.8rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.2rem]">
-              决策工作台
-            </h1>
-            <p class="max-w-3xl text-sm leading-7 text-slate-600 sm:text-[0.98rem]">
-              这里负责管理项目、文件夹和模板。真正的决策内容编辑会进入独立项目页，避免项目管理和内容生产混在一起。
-            </p>
-          </div>
+    <header class="flex flex-col gap-2 px-1 py-1 sm:flex-row sm:items-end sm:justify-between">
+      <div class="grid gap-1.5">
+        <div class="inline-flex w-fit items-center gap-2 text-[0.68rem] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+          <LayoutDashboard class="size-3.5 text-slate-500" />
+          Workspace
         </div>
-
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <UiCard
-            v-for="item in workspaceStats"
-            :key="item.label"
-            class="min-w-[170px] rounded-[24px] border border-white/75 bg-white/76 shadow-[0_18px_55px_rgba(15,23,42,0.07)]"
-          >
-            <UiCardHeader class="gap-2 p-4">
-              <UiCardDescription class="text-xs font-semibold tracking-[0.18em] uppercase text-slate-500">
-                {{ item.label }}
-              </UiCardDescription>
-              <UiCardTitle class="font-display text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">
-                {{ item.value }}
-              </UiCardTitle>
-              <p class="text-xs leading-6 text-slate-500">
-                {{ item.hint }}
-              </p>
-            </UiCardHeader>
-          </UiCard>
-        </div>
+        <h1 class="font-display text-[1.55rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[1.8rem]">
+          决策工作台
+        </h1>
+        <p class="max-w-2xl text-sm leading-6 text-slate-500">
+          管理项目、文件夹和模板，具体决策内容进入项目页继续编辑。
+        </p>
       </div>
     </header>
 

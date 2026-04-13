@@ -1,6 +1,28 @@
 import { defineStore } from 'pinia'
+import {
+  createColumnApi,
+  createFolderApi,
+  createProjectApi,
+  createRowApi,
+  deleteColumnApi,
+  deleteProjectApi,
+  deleteRowApi,
+  getFoldersApi,
+  getProjectPayloadApi,
+  getProjectsApi,
+  type MatrixCellRecord,
+  type MatrixColumnRecord,
+  type MatrixColumnType,
+  type MatrixRowRecord,
+  type ProjectPayloadRecord,
+  type ProjectRecord,
+  updateColumnApi,
+  updateProjectApi,
+  updateRowApi,
+  upsertCellApi,
+} from '@/api/matrix'
 
-export type DecisionColumnType = 'text' | 'numeric' | 'score' | 'select'
+export type DecisionColumnType = MatrixColumnType
 
 export interface DecisionFolder {
   id: string
@@ -75,12 +97,36 @@ export interface DecisionTemplate {
   starterRows: DecisionRow[]
 }
 
+interface DecisionWorkspaceState {
+  folders: DecisionFolder[]
+  templates: DecisionTemplate[]
+  projects: DecisionProject[]
+  selectedProjectId: string | null
+  selectedFolderId: string
+  hydratedProjectIds: string[]
+  isLoading: boolean
+  isLoaded: boolean
+}
+
+const folderAccents = ['bg-teal-500', 'bg-sky-500', 'bg-orange-500', 'bg-rose-500', 'bg-emerald-500']
+
+let workspaceLoadPromise: Promise<boolean> | null = null
+const cellSaveQueues = new Map<string, Promise<void>>()
+
 function uid(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
 }
 
 function nowISO() {
   return new Date().toISOString()
+}
+
+function toId(value: number | string | null | undefined) {
+  return value === null || value === undefined ? null : String(value)
+}
+
+function toNumberId(value: string | null | undefined) {
+  return value ? Number(value) : null
 }
 
 function createCell(): DecisionCell {
@@ -107,6 +153,16 @@ function cloneCell(cell?: Partial<DecisionCell>): DecisionCell {
   }
 }
 
+function hasCellContent(cell: DecisionCell) {
+  return Boolean(
+    cell.text.trim()
+    || cell.note.trim()
+    || cell.select
+    || cell.score !== null
+    || cell.numeric !== null,
+  )
+}
+
 function createTemplateColumns(seed: Array<Partial<DecisionColumn> & Pick<DecisionColumn, 'title' | 'type'>>) {
   return seed.map(column => ({
     id: uid('column'),
@@ -114,7 +170,7 @@ function createTemplateColumns(seed: Array<Partial<DecisionColumn> & Pick<Decisi
     type: column.type,
     weight: column.weight ?? 1,
     unit: column.unit ?? '',
-    options: column.options ?? [],
+    options: [...(column.options ?? [])],
   }))
 }
 
@@ -145,26 +201,26 @@ function createOfficialTemplates(): DecisionTemplate[] {
       id: 'template-rent',
       name: '租房对比',
       category: '生活决策',
-      description: '适合比较多个房源的客观条件与主观居住体验。',
+      description: '比较多个房源的通勤、预算和居住体验。',
       accent: 'from-cyan-500/20 via-teal-500/15 to-emerald-500/20',
       isOfficial: true,
       columns: createTemplateColumns([
         { title: '租金', type: 'numeric', unit: '元/月' },
         { title: '通勤', type: 'numeric', unit: '分钟' },
-        { title: '是否带阳台', type: 'select', options: ['是', '否'] },
+        { title: '是否有阳台', type: 'select', options: ['有', '无'] },
         { title: '居住舒适度', type: 'score', weight: 4 },
-        { title: '房源备注', type: 'text' },
+        { title: '备注', type: 'text' },
       ]),
       starterRows: createStarterRows([
         { title: '房源 A', subtitle: '靠近地铁，预算友好' },
-        { title: '房源 B', subtitle: '空间更大，通勤稍远' },
+        { title: '房源 B', subtitle: '空间更大，通勤更远' },
       ]),
     },
     {
       id: 'template-phone',
       name: '手机选购',
       category: '消费决策',
-      description: '比较价格、影像、续航和上手体验，快速得出推荐结论。',
+      description: '快速比较价格、续航、影像和系统偏好。',
       accent: 'from-slate-900/15 via-slate-700/10 to-orange-500/20',
       isOfficial: true,
       columns: createTemplateColumns([
@@ -176,15 +232,15 @@ function createOfficialTemplates(): DecisionTemplate[] {
       ]),
       starterRows: createStarterRows([
         { title: '方案 A', subtitle: '偏性价比' },
-        { title: '方案 B', subtitle: '偏体验完整度' },
+        { title: '方案 B', subtitle: '偏整体体验' },
         { title: '方案 C', subtitle: '偏影像能力' },
       ]),
     },
     {
       id: 'template-offer',
-      name: 'Offer 比较',
+      name: 'Offer 对比',
       category: '职业决策',
-      description: '把薪资、地点、成长性和主观匹配度放到同一张表里判断。',
+      description: '把薪资、成长空间和团队匹配度放到一起看。',
       accent: 'from-violet-500/18 via-fuchsia-500/14 to-sky-500/18',
       isOfficial: true,
       columns: createTemplateColumns([
@@ -202,122 +258,36 @@ function createOfficialTemplates(): DecisionTemplate[] {
   ]
 }
 
-function createProjectFromTemplate(template: DecisionTemplate, overrides?: Partial<DecisionProject>): DecisionProject {
-  const now = nowISO()
-  const columns = template.columns.map(column => ({
-    ...column,
-    id: uid('column'),
-    options: [...column.options],
-  }))
-  const rows = template.starterRows.map(row => ({
-    ...row,
-    id: uid('row'),
-  }))
-
+function createBlankTemplate(): DecisionTemplate {
   return {
-    id: uid('project'),
-    title: overrides?.title ?? template.name,
-    description: overrides?.description ?? template.description,
-    folderId: overrides?.folderId ?? null,
-    isFavorite: overrides?.isFavorite ?? false,
-    createdAt: now,
-    updatedAt: now,
-    lastOpenedAt: now,
-    rows,
-    columns,
-    cells: createProjectCells(rows, columns),
-    aiSummary: null,
-    shareToken: null,
+    id: 'template-blank',
+    name: '空白项目',
+    category: '通用',
+    description: '从一张干净的矩阵开始整理这次选择。',
+    accent: '',
+    isOfficial: false,
+    columns: createTemplateColumns([
+      { title: '成本 / 价格', type: 'numeric', unit: '元' },
+      { title: '主观感受', type: 'score', weight: 3 },
+      { title: '备注', type: 'text' },
+    ]),
+    starterRows: createStarterRows([
+      { title: '方案 A', subtitle: '先写下第一个候选项' },
+      { title: '方案 B', subtitle: '再放一个对照方案' },
+    ]),
   }
 }
 
-function createDefaultProject(): DecisionProject {
-  const templates = createOfficialTemplates()
-  const template = templates[1] ?? templates[0]!
-  const project = createProjectFromTemplate(template, {
-    title: '2026 旗舰手机决策',
-    description: '比较三款手机在价格、续航、影像和系统体验上的综合表现。',
-    folderId: 'folder-shopping',
-    isFavorite: true,
-  })
-
-  const price = project.columns[0]!
-  const battery = project.columns[1]!
-  const camera = project.columns[2]!
-  const system = project.columns[3]!
-  const note = project.columns[4]!
-  const rowA = project.rows[0]!
-  const rowB = project.rows[1]!
-  const rowC = project.rows[2]!
-
-  project.cells[getCellKey(rowA.id, price.id)] = { ...createCell(), numeric: 4999 }
-  project.cells[getCellKey(rowA.id, battery.id)] = { ...createCell(), score: 8, note: '续航稳定，重度使用一天无压力' }
-  project.cells[getCellKey(rowA.id, camera.id)] = { ...createCell(), score: 7, note: '白天表现稳，夜景一般' }
-  project.cells[getCellKey(rowA.id, system.id)] = { ...createCell(), select: 'Android' }
-  project.cells[getCellKey(rowA.id, note.id)] = { ...createCell(), text: '整体均衡，预算压力最小。' }
-
-  project.cells[getCellKey(rowB.id, price.id)] = { ...createCell(), numeric: 6999 }
-  project.cells[getCellKey(rowB.id, battery.id)] = { ...createCell(), score: 9, note: '续航和充电都更从容' }
-  project.cells[getCellKey(rowB.id, camera.id)] = { ...createCell(), score: 8, note: '视频能力稳定，成片率高' }
-  project.cells[getCellKey(rowB.id, system.id)] = { ...createCell(), select: 'iOS' }
-  project.cells[getCellKey(rowB.id, note.id)] = { ...createCell(), text: '价格偏高，但整体体验完整。' }
-
-  project.cells[getCellKey(rowC.id, price.id)] = { ...createCell(), numeric: 6499 }
-  project.cells[getCellKey(rowC.id, battery.id)] = { ...createCell(), score: 7, note: '续航中规中矩' }
-  project.cells[getCellKey(rowC.id, camera.id)] = { ...createCell(), score: 9, note: '影像能力最强，长焦更有优势' }
-  project.cells[getCellKey(rowC.id, system.id)] = { ...createCell(), select: 'Android' }
-  project.cells[getCellKey(rowC.id, note.id)] = { ...createCell(), text: '适合重视拍照的人。' }
-
-  return project
-}
-
-function createSecondProject(): DecisionProject {
-  const templates = createOfficialTemplates()
-  const template = templates[0]!
-  const project = createProjectFromTemplate(template, {
-    title: '春季租房比较',
-    description: '优先考虑通勤和居住舒适度，价格其次。',
-    folderId: 'folder-life',
-  })
-
-  const rent = project.columns[0]!
-  const commute = project.columns[1]!
-  const balcony = project.columns[2]!
-  const comfort = project.columns[3]!
-  const remark = project.columns[4]!
-  const rowA = project.rows[0]!
-  const rowB = project.rows[1]!
-
-  project.cells[getCellKey(rowA.id, rent.id)] = { ...createCell(), numeric: 4300 }
-  project.cells[getCellKey(rowA.id, commute.id)] = { ...createCell(), numeric: 28 }
-  project.cells[getCellKey(rowA.id, balcony.id)] = { ...createCell(), select: '是' }
-  project.cells[getCellKey(rowA.id, comfort.id)] = { ...createCell(), score: 8, note: '采光更好，楼层合适' }
-  project.cells[getCellKey(rowA.id, remark.id)] = { ...createCell(), text: '附近商圈成熟，周末方便。' }
-
-  project.cells[getCellKey(rowB.id, rent.id)] = { ...createCell(), numeric: 3900 }
-  project.cells[getCellKey(rowB.id, commute.id)] = { ...createCell(), numeric: 43 }
-  project.cells[getCellKey(rowB.id, balcony.id)] = { ...createCell(), select: '否' }
-  project.cells[getCellKey(rowB.id, comfort.id)] = { ...createCell(), score: 6, note: '价格低，但整体体验一般' }
-  project.cells[getCellKey(rowB.id, remark.id)] = { ...createCell(), text: '性价比更高，适合压预算。' }
-
-  return project
-}
-
-function createDefaultState() {
-  const templates = createOfficialTemplates()
-  const folders: DecisionFolder[] = [
-    { id: 'folder-shopping', name: '消费决策', accent: 'bg-amber-500' },
-    { id: 'folder-life', name: '生活选择', accent: 'bg-teal-500' },
-    { id: 'folder-career', name: '职业规划', accent: 'bg-sky-500' },
-  ]
-  const projects = [createDefaultProject(), createSecondProject()]
-
+function createDefaultState(): DecisionWorkspaceState {
   return {
-    folders,
-    templates,
-    projects,
-    selectedProjectId: projects[0]?.id ?? null,
+    folders: [],
+    templates: createOfficialTemplates(),
+    projects: [],
+    selectedProjectId: null,
     selectedFolderId: 'all',
+    hydratedProjectIds: [],
+    isLoading: false,
+    isLoaded: false,
   }
 }
 
@@ -332,7 +302,7 @@ function cloneTemplateFromProject(project: DecisionProject, name: string): Decis
     id: uid('template'),
     name,
     category: '我的模板',
-    description: project.description || `来自 ${project.title} 的个人模板`,
+    description: project.description || `来自 ${project.title} 的模板`,
     accent: 'from-slate-900/15 via-teal-500/14 to-orange-500/18',
     isOfficial: false,
     columns: project.columns.map(column => ({
@@ -350,6 +320,132 @@ function getScoreColumns(project: DecisionProject) {
 
 function resolveProjectCell(project: DecisionProject, rowId: string, columnId: string) {
   return project.cells[getCellKey(rowId, columnId)] ?? createCell()
+}
+
+function parseOptions(raw: string) {
+  if (!raw)
+    return []
+
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed)
+      ? parsed.map(item => String(item).trim()).filter(Boolean)
+      : []
+  }
+  catch {
+    return raw.split(/[,\n]/g).map(item => item.trim()).filter(Boolean)
+  }
+}
+
+function buildFolderAccent(index: number) {
+  return folderAccents[index % folderAccents.length]!
+}
+
+function mapFolder(record: { id: number, name: string }, index: number): DecisionFolder {
+  return {
+    id: String(record.id),
+    name: record.name,
+    accent: buildFolderAccent(index),
+  }
+}
+
+function mapRow(record: MatrixRowRecord): DecisionRow {
+  return {
+    id: String(record.id),
+    title: record.name,
+    subtitle: record.subtitle || '',
+  }
+}
+
+function mapColumn(record: MatrixColumnRecord): DecisionColumn {
+  return {
+    id: String(record.id),
+    title: record.title,
+    type: record.type,
+    weight: record.weight ?? 1,
+    unit: record.unit || '',
+    options: parseOptions(record.options),
+  }
+}
+
+function mapProjectSummary(record: ProjectRecord, existing?: DecisionProject): DecisionProject {
+  return {
+    id: String(record.id),
+    title: record.title,
+    description: record.description || '',
+    folderId: toId(record.folder_id),
+    isFavorite: Boolean(record.is_favorite),
+    createdAt: record.created_at,
+    updatedAt: record.updated_at,
+    lastOpenedAt: record.last_opened_at || record.updated_at || record.created_at,
+    rows: existing?.rows ?? [],
+    columns: existing?.columns ?? [],
+    cells: existing?.cells ?? {},
+    aiSummary: existing?.aiSummary ?? null,
+    shareToken: record.share_token,
+  }
+}
+
+function mapCellSeed(record: MatrixCellRecord): Partial<DecisionCell> {
+  return {
+    text: record.text_content || '',
+    note: record.note || '',
+    score: typeof record.score_value === 'number' ? record.score_value : null,
+    numeric: typeof record.numeric_value === 'number' ? record.numeric_value : null,
+    select: record.select_value ?? null,
+  }
+}
+
+function mapProjectPayload(payload: ProjectPayloadRecord, existing?: DecisionProject): DecisionProject {
+  const rows = payload.rows.map(mapRow)
+  const columns = payload.columns.map(mapColumn)
+  const seed: Record<string, Partial<DecisionCell>> = {}
+
+  payload.cells.forEach((cell) => {
+    seed[getCellKey(String(cell.row_id), String(cell.column_id))] = mapCellSeed(cell)
+  })
+
+  const project = mapProjectSummary(payload.project, existing)
+  project.rows = rows
+  project.columns = columns
+  project.cells = createProjectCells(rows, columns, seed)
+  return project
+}
+
+function replaceProject(projects: DecisionProject[], nextProject: DecisionProject) {
+  const index = projects.findIndex(project => project.id === nextProject.id)
+  if (index >= 0) {
+    const next = [...projects]
+    next[index] = nextProject
+    return next
+  }
+
+  return [nextProject, ...projects]
+}
+
+function createProjectUpdatePayload(project: DecisionProject) {
+  return {
+    title: project.title,
+    description: project.description,
+    folder_id: toNumberId(project.folderId),
+    is_favorite: project.isFavorite,
+    last_opened_at: project.lastOpenedAt || null,
+    share_token: project.shareToken,
+  }
+}
+
+function getProjectCellPayload(project: DecisionProject, rowId: string, columnId: string) {
+  const cell = resolveProjectCell(project, rowId, columnId)
+
+  return {
+    row_id: Number(rowId),
+    column_id: Number(columnId),
+    text_content: cell.text,
+    note: cell.note,
+    numeric_value: cell.numeric,
+    score_value: cell.score,
+    select_value: cell.select,
+  }
 }
 
 export interface RankedRow {
@@ -382,9 +478,8 @@ function calculateRanking(project: DecisionProject): RankedRow[] {
 
     scoreColumns.forEach((column) => {
       const cell = resolveProjectCell(project, row.id, column.id)
-      if (cell.score === null || Number.isNaN(cell.score)) {
+      if (cell.score === null || Number.isNaN(cell.score))
         return
-      }
 
       completed += 1
       weighted += cell.score * column.weight
@@ -441,17 +536,17 @@ function buildAISummary(project: DecisionProject, focusPrompt: string): Decision
   const gaps: string[] = []
 
   if (!scoreColumns.length) {
-    gaps.push('当前项目还没有计分列，建议先创建 1-2 个主观评分维度。')
+    gaps.push('当前项目还没有评分列，建议先补 1 到 2 个主观评分维度。')
   }
 
   ranking
     .filter(row => row.required > 0 && row.completed < row.required)
     .forEach((row) => {
-      gaps.push(`${row.rowTitle} 还缺少 ${row.required - row.completed} 个评分项，暂未参与排名。`)
+      gaps.push(`${row.rowTitle} 还缺少 ${row.required - row.completed} 个评分项，暂未参与排序。`)
     })
 
   const strengths: DecisionSummaryEntry[] = project.rows.map((row) => {
-        const bullets: string[] = []
+    const bullets: string[] = []
 
     const scored = (scoreColumns
       .map(column => ({
@@ -471,7 +566,7 @@ function buildAISummary(project: DecisionProject, focusPrompt: string): Decision
       .filter(Boolean) as string[]
 
     if (scored[0]) {
-      bullets.push(`${scored[0].column.title} 得分最高，为 ${scored[0].score} 分。`)
+      bullets.push(`${scored[0].column.title} 得分最高，达到 ${scored[0].score} 分。`)
     }
     if (scored[0]?.note) {
       bullets.push(scored[0].note)
@@ -479,9 +574,8 @@ function buildAISummary(project: DecisionProject, focusPrompt: string): Decision
     if (numericHighlights[0]) {
       bullets.push(`关键客观信息：${numericHighlights.slice(0, 2).join('，')}。`)
     }
-
     if (!bullets.length) {
-      bullets.push('当前信息还不够充分，建议继续补充。')
+      bullets.push('当前信息还不够完整，建议继续补充。')
     }
 
     return {
@@ -506,7 +600,7 @@ function buildAISummary(project: DecisionProject, focusPrompt: string): Decision
       bullets.push(`${scored[0].column.title} 是当前短板，只有 ${scored[0].score} 分。`)
     }
     if (!scored.length) {
-      bullets.push('尚未形成可判断的主观评分。')
+      bullets.push('还没有形成足够的主观评分。')
     }
 
     return {
@@ -517,24 +611,24 @@ function buildAISummary(project: DecisionProject, focusPrompt: string): Decision
   })
 
   const evidence = [
-    `${project.rows.length} 个选项，${project.columns.length} 个维度，${scoreColumns.length} 个计分列参与比较。`,
+    `${project.rows.length} 个候选项，${project.columns.length} 个维度，其中 ${scoreColumns.length} 个评分列参与比较。`,
     completeRows.length
-      ? `当前可参与排名的选项有 ${completeRows.length} 个，领先项为 ${topRow?.rowTitle}。`
-      : '暂无完整评分项，尚未形成最终排名。',
+      ? `当前可参与排序的候选项有 ${completeRows.length} 个，领先项为 ${topRow?.rowTitle}。`
+      : '暂时还没有完整评分项，尚未形成最终排序。',
     focusPrompt.trim()
-      ? `本次总结优先围绕“${focusPrompt.trim()}”展开。`
-      : '本次总结默认综合考虑价格、主观体验和补充备注。',
+      ? `这次总结优先围绕“${focusPrompt.trim()}”展开。`
+      : '这次总结默认综合考虑客观数值、主观体验和备注信息。',
   ]
 
   return {
     focusPrompt,
     generatedAt: nowISO(),
     overview: completeRows.length
-      ? `${project.title} 已经形成初步排序，其中 ${topRow?.rowTitle} 目前最均衡。${gaps.length ? '但仍有部分选项信息不完整，建议补齐后再做最终判断。' : '现有信息已经足以支撑一次初步决策。'}`
-      : `${project.title} 目前仍处在资料整理阶段，建议先补足关键评分项，再使用 AI 总结做最后收敛。`,
+      ? `${project.title} 已经形成初步排序，目前 ${topRow?.rowTitle} 更均衡。${gaps.length ? '但仍有部分信息不完整，建议补齐后再做最终判断。' : '现有信息已经足以支撑一次初步决策。'}`
+      : `${project.title} 目前还处于资料整理阶段，建议先补齐评分项后再生成总结。`,
     recommendation: completeRows.length && topRow
-      ? `如果你现在就要做决定，可以先把 ${topRow.rowTitle} 作为基准方案，再重点确认它在低分维度上的风险。`
-      : '建议先补全每个选项的主观评分与核心数值字段，避免在信息残缺时过早下结论。',
+      ? `如果现在就要做决定，可以先把 ${topRow.rowTitle} 当作基准方案，再重点确认它在低分维度上的风险。`
+      : '建议先补齐每个候选项的核心评分和关键备注，避免在信息不完整时过早下结论。',
     strengths,
     tradeoffs,
     evidence,
@@ -543,7 +637,7 @@ function buildAISummary(project: DecisionProject, focusPrompt: string): Decision
 }
 
 export const useDecisionWorkspaceStore = defineStore('decision-workspace', {
-  state: () => createDefaultState(),
+  state: (): DecisionWorkspaceState => createDefaultState(),
 
   getters: {
     currentProject(state): DecisionProject | null {
@@ -565,242 +659,560 @@ export const useDecisionWorkspaceStore = defineStore('decision-workspace', {
   },
 
   actions: {
+    markProjectHydrated(projectId: string) {
+      if (!this.hydratedProjectIds.includes(projectId)) {
+        this.hydratedProjectIds = [...this.hydratedProjectIds, projectId]
+      }
+    },
+
+    setProject(project: DecisionProject) {
+      this.projects = replaceProject(this.projects, project)
+    },
+
+    getProjectById(projectId: string) {
+      return this.projects.find(project => project.id === projectId) ?? null
+    },
+
+    async persistProject(projectId: string) {
+      const project = this.getProjectById(projectId)
+      if (!project)
+        return null
+
+      try {
+        const response = await updateProjectApi(Number(project.id), createProjectUpdatePayload(project))
+        const nextProject = mapProjectSummary(response.data, project)
+        nextProject.rows = project.rows
+        nextProject.columns = project.columns
+        nextProject.cells = project.cells
+        nextProject.aiSummary = project.aiSummary
+        this.setProject(nextProject)
+        return nextProject
+      }
+      catch {
+        return null
+      }
+    },
+
+    async ensureLoaded(force = false) {
+      if (this.isLoaded && !force)
+        return true
+
+      if (workspaceLoadPromise && !force)
+        return workspaceLoadPromise
+
+      workspaceLoadPromise = (async () => {
+        this.isLoading = true
+
+        try {
+          const [foldersResponse, projectsResponse] = await Promise.all([
+            getFoldersApi(),
+            getProjectsApi(),
+          ])
+
+          const folderMap = new Map(this.folders.map(folder => [folder.id, folder.accent]))
+          this.folders = foldersResponse.data.map((folder, index) => ({
+            ...mapFolder(folder, index),
+            accent: folderMap.get(String(folder.id)) ?? buildFolderAccent(index),
+          }))
+
+          const existingProjects = new Map(this.projects.map(project => [project.id, project]))
+          const summaries = projectsResponse.data.map(project => mapProjectSummary(project, existingProjects.get(String(project.id))))
+          const payloadResults = await Promise.allSettled(
+            projectsResponse.data.map(project => getProjectPayloadApi(project.id)),
+          )
+
+          const hydratedProjectIds: string[] = []
+          const nextProjects = summaries.map((summary, index) => {
+            const payloadResult = payloadResults[index]
+            if (payloadResult?.status === 'fulfilled') {
+              hydratedProjectIds.push(summary.id)
+              return mapProjectPayload(payloadResult.value.data, existingProjects.get(summary.id))
+            }
+            return summary
+          })
+
+          this.projects = nextProjects
+          this.hydratedProjectIds = hydratedProjectIds
+          this.isLoaded = true
+
+          if (!this.selectedProjectId || !nextProjects.some(project => project.id === this.selectedProjectId)) {
+            this.selectedProjectId = nextProjects[0]?.id ?? null
+          }
+
+          return true
+        }
+        catch {
+          return false
+        }
+        finally {
+          this.isLoading = false
+          workspaceLoadPromise = null
+        }
+      })()
+
+      return workspaceLoadPromise
+    },
+
     selectFolder(folderId: string) {
       this.selectedFolderId = folderId
     },
 
-    selectProject(projectId: string) {
-      const project = this.projects.find(item => item.id === projectId)
-      if (!project)
-        return
-      touchProject(project)
-      this.selectedProjectId = projectId
+    async loadProject(projectId: string, markOpened = false) {
+      try {
+        const existing = this.getProjectById(projectId) ?? undefined
+        const response = await getProjectPayloadApi(Number(projectId))
+        const project = mapProjectPayload(response.data, existing)
+        this.selectedProjectId = projectId
+        this.setProject(project)
+        this.markProjectHydrated(projectId)
+
+        if (markOpened) {
+          touchProject(project)
+          await this.persistProject(projectId)
+        }
+
+        return this.getProjectById(projectId)
+      }
+      catch {
+        return null
+      }
     },
 
-    createFolder(name: string) {
+    async selectProject(projectId: string) {
+      await this.ensureLoaded()
+
+      const project = this.getProjectById(projectId)
+      if (!project)
+        return null
+
+      this.selectedProjectId = projectId
+
+      if (!this.hydratedProjectIds.includes(projectId)) {
+        return this.loadProject(projectId, true)
+      }
+
+      touchProject(project)
+      void this.persistProject(projectId)
+      return project
+    },
+
+    async createFolder(name: string) {
       const trimmed = name.trim()
       if (!trimmed)
-        return
+        return null
 
-      this.folders.unshift({
-        id: uid('folder'),
-        name: trimmed,
-        accent: ['bg-teal-500', 'bg-sky-500', 'bg-orange-500', 'bg-rose-500'][this.folders.length % 4]!,
-      })
-    },
-
-    createProject(input?: { title?: string, description?: string, folderId?: string | null, templateId?: string | null }) {
-      const template = input?.templateId ? this.templates.find(item => item.id === input.templateId) : null
-      const project = template
-        ? createProjectFromTemplate(template, {
-            title: input?.title || `${template.name} 新项目`,
-            description: input?.description || template.description,
-            folderId: input?.folderId ?? null,
-          })
-        : createProjectFromTemplate({
-            id: 'blank',
-            name: '空白项目',
-            category: '空白',
-            description: '从一张空白矩阵开始整理你的复杂选择。',
-            accent: '',
-            isOfficial: false,
-            columns: createTemplateColumns([
-              { title: '价格 / 成本', type: 'numeric', unit: '元' },
-              { title: '主观感受', type: 'score', weight: 3 },
-              { title: '备注', type: 'text' },
-            ]),
-            starterRows: createStarterRows([
-              { title: '方案 A', subtitle: '先写下第一个候选项' },
-              { title: '方案 B', subtitle: '再放一个对照方案' },
-            ]),
-          }, {
-            title: input?.title || '新的决策项目',
-            description: input?.description || '先列出候选方案，再逐步补齐维度、评分和备注。',
-            folderId: input?.folderId ?? null,
-          })
-
-      this.projects.unshift(project)
-      this.selectedProjectId = project.id
-      touchProject(project)
-    },
-
-    duplicateProject(projectId: string) {
-      const source = this.projects.find(item => item.id === projectId)
-      if (!source)
-        return
-
-      const project: DecisionProject = {
-        ...structuredClone(source),
-        id: uid('project'),
-        title: `${source.title} 副本`,
-        createdAt: nowISO(),
-        updatedAt: nowISO(),
-        lastOpenedAt: nowISO(),
-        shareToken: null,
+      try {
+        const response = await createFolderApi({ name: trimmed })
+        const folder = {
+          ...mapFolder(response.data, this.folders.length),
+          accent: buildFolderAccent(this.folders.length),
+        }
+        this.folders = [folder, ...this.folders]
+        return folder
       }
-
-      this.projects.unshift(project)
-      this.selectedProjectId = project.id
-    },
-
-    deleteProject(projectId: string) {
-      this.projects = this.projects.filter(project => project.id !== projectId)
-      if (this.selectedProjectId === projectId) {
-        this.selectedProjectId = this.projects[0]?.id ?? null
+      catch {
+        return null
       }
     },
 
-    updateProjectMeta(projectId: string, patch: Partial<Pick<DecisionProject, 'title' | 'description' | 'folderId'>>) {
-      const project = this.projects.find(item => item.id === projectId)
+    async applyTemplate(projectId: string, template: DecisionTemplate) {
+      const project = this.getProjectById(projectId)
       if (!project)
-        return
+        return null
+
+      try {
+        for (const column of template.columns) {
+          await this.addColumn(projectId, {
+            title: column.title,
+            type: column.type,
+            weight: column.weight,
+            unit: column.unit,
+            options: column.options,
+          })
+        }
+
+        for (const row of template.starterRows) {
+          await this.addRow(projectId, {
+            title: row.title,
+            subtitle: row.subtitle,
+          })
+        }
+
+        return this.loadProject(projectId)
+      }
+      catch {
+        return this.getProjectById(projectId)
+      }
+    },
+
+    async createProject(input?: { title?: string, description?: string, folderId?: string | null, templateId?: string | null }) {
+      await this.ensureLoaded()
+
+      const template = input?.templateId
+        ? this.templates.find(item => item.id === input.templateId) ?? createBlankTemplate()
+        : createBlankTemplate()
+      const title = input?.title?.trim() || (input?.templateId ? `${template.name} 新项目` : '新的决策项目')
+      const description = input?.description?.trim() || template.description
+
+      try {
+        const response = await createProjectApi({
+          title,
+          description,
+          folder_id: toNumberId(input?.folderId ?? null),
+        })
+
+        const project = mapProjectSummary(response.data)
+        this.setProject(project)
+        this.selectedProjectId = project.id
+        await this.applyTemplate(project.id, template)
+        return this.loadProject(project.id, true)
+      }
+      catch {
+        return null
+      }
+    },
+
+    async duplicateProject(projectId: string) {
+      await this.ensureLoaded()
+
+      let source = this.getProjectById(projectId)
+      if (!source)
+        return null
+
+      if (!this.hydratedProjectIds.includes(projectId)) {
+        source = await this.loadProject(projectId) ?? source
+      }
+
+      try {
+        const createResponse = await createProjectApi({
+          title: `${source.title} 副本`,
+          description: source.description,
+          folder_id: toNumberId(source.folderId),
+          is_favorite: source.isFavorite,
+        })
+
+        const duplicated = mapProjectSummary(createResponse.data)
+        this.setProject(duplicated)
+        this.selectedProjectId = duplicated.id
+
+        const columnIdMap = new Map<string, string>()
+        const rowIdMap = new Map<string, string>()
+
+        for (const column of source.columns) {
+          const response = await createColumnApi(Number(duplicated.id), {
+            title: column.title,
+            type: column.type,
+            weight: column.weight,
+            unit: column.unit,
+            options: column.options,
+          })
+          columnIdMap.set(column.id, String(response.data.id))
+        }
+
+        for (const row of source.rows) {
+          const response = await createRowApi(Number(duplicated.id), {
+            name: row.title,
+            subtitle: row.subtitle,
+          })
+          rowIdMap.set(row.id, String(response.data.id))
+        }
+
+        for (const row of source.rows) {
+          for (const column of source.columns) {
+            const cell = resolveProjectCell(source, row.id, column.id)
+            if (!hasCellContent(cell))
+              continue
+
+            const nextRowId = rowIdMap.get(row.id)
+            const nextColumnId = columnIdMap.get(column.id)
+            if (!nextRowId || !nextColumnId)
+              continue
+
+            await upsertCellApi(Number(duplicated.id), {
+              row_id: Number(nextRowId),
+              column_id: Number(nextColumnId),
+              text_content: cell.text,
+              note: cell.note,
+              numeric_value: cell.numeric,
+              score_value: cell.score,
+              select_value: cell.select,
+            })
+          }
+        }
+
+        return this.loadProject(duplicated.id, true)
+      }
+      catch {
+        return null
+      }
+    },
+
+    async deleteProject(projectId: string) {
+      try {
+        await deleteProjectApi(Number(projectId))
+        this.projects = this.projects.filter(project => project.id !== projectId)
+        this.hydratedProjectIds = this.hydratedProjectIds.filter(id => id !== projectId)
+
+        if (this.selectedProjectId === projectId) {
+          this.selectedProjectId = this.projects[0]?.id ?? null
+        }
+
+        return true
+      }
+      catch {
+        return false
+      }
+    },
+
+    async updateProjectMeta(projectId: string, patch: Partial<Pick<DecisionProject, 'title' | 'description' | 'folderId'>>) {
+      const project = this.getProjectById(projectId)
+      if (!project)
+        return null
+
       Object.assign(project, patch)
       touchProject(project)
+      await this.persistProject(projectId)
+      return this.getProjectById(projectId)
     },
 
-    toggleFavorite(projectId: string) {
-      const project = this.projects.find(item => item.id === projectId)
+    async toggleFavorite(projectId: string) {
+      const project = this.getProjectById(projectId)
       if (!project)
-        return
+        return null
+
       project.isFavorite = !project.isFavorite
       touchProject(project)
+      await this.persistProject(projectId)
+      return this.getProjectById(projectId)
     },
 
-    addRow(projectId: string) {
-      const project = this.projects.find(item => item.id === projectId)
+    async addRow(projectId: string, input?: Partial<DecisionRow>) {
+      const project = this.getProjectById(projectId)
       if (!project)
-        return
-      const row: DecisionRow = {
-        id: uid('row'),
-        title: `方案 ${String.fromCharCode(65 + project.rows.length)}`,
-        subtitle: '继续补充这个候选项的定位与约束',
+        return null
+
+      try {
+        const response = await createRowApi(Number(projectId), {
+          name: input?.title || `方案 ${String.fromCharCode(65 + project.rows.length)}`,
+          subtitle: input?.subtitle || '继续补充这个候选项的定位与约束',
+        })
+
+        const row = mapRow(response.data)
+        project.rows.push(row)
+        project.columns.forEach((column) => {
+          project.cells[getCellKey(row.id, column.id)] = createCell()
+        })
+        touchProject(project)
+        this.markProjectHydrated(projectId)
+        return row
       }
-      project.rows.push(row)
-      project.columns.forEach((column) => {
-        project.cells[getCellKey(row.id, column.id)] = createCell()
-      })
-      touchProject(project)
+      catch {
+        return null
+      }
     },
 
-    updateRow(projectId: string, rowId: string, patch: Partial<DecisionRow>) {
-      const project = this.projects.find(item => item.id === projectId)
+    async updateRow(projectId: string, rowId: string, patch: Partial<DecisionRow>) {
+      const project = this.getProjectById(projectId)
       const row = project?.rows.find(item => item.id === rowId)
       if (!project || !row)
-        return
+        return null
+
       Object.assign(row, patch)
       touchProject(project)
+
+      try {
+        await updateRowApi(Number(projectId), Number(rowId), {
+          name: row.title,
+          subtitle: row.subtitle,
+        })
+      }
+      catch {}
+
+      return row
     },
 
-    removeRow(projectId: string, rowId: string) {
-      const project = this.projects.find(item => item.id === projectId)
+    async removeRow(projectId: string, rowId: string) {
+      const project = this.getProjectById(projectId)
       if (!project || project.rows.length <= 1)
-        return
-      project.rows = project.rows.filter(row => row.id !== rowId)
-      Object.keys(project.cells).forEach((key) => {
-        if (key.startsWith(`${rowId}:`))
-          delete project.cells[key]
-      })
-      touchProject(project)
+        return false
+
+      try {
+        await deleteRowApi(Number(projectId), Number(rowId))
+        project.rows = project.rows.filter(row => row.id !== rowId)
+        Object.keys(project.cells).forEach((key) => {
+          if (key.startsWith(`${rowId}:`))
+            delete project.cells[key]
+        })
+        touchProject(project)
+        return true
+      }
+      catch {
+        return false
+      }
     },
 
-    addColumn(projectId: string, input?: Partial<DecisionColumn>) {
-      const project = this.projects.find(item => item.id === projectId)
+    async addColumn(projectId: string, input?: Partial<DecisionColumn>) {
+      const project = this.getProjectById(projectId)
       if (!project)
-        return
+        return null
 
       const type = input?.type ?? 'score'
-      const column: DecisionColumn = {
-        id: uid('column'),
-        title: input?.title ?? (type === 'score' ? '新的评分维度' : '新的维度'),
-        type,
-        weight: input?.weight ?? 1,
-        unit: input?.unit ?? '',
-        options: input?.options ?? (type === 'select' ? ['选项 1', '选项 2'] : []),
-      }
+      const title = input?.title ?? (type === 'score'
+        ? '新的评分维度'
+        : type === 'numeric'
+          ? '新的数值维度'
+          : type === 'select'
+            ? '新的选择维度'
+            : '新的信息维度')
 
-      project.columns.push(column)
-      project.rows.forEach((row) => {
-        project.cells[getCellKey(row.id, column.id)] = createCell()
-      })
-      touchProject(project)
+      try {
+        const response = await createColumnApi(Number(projectId), {
+          title,
+          type,
+          weight: input?.weight ?? 1,
+          unit: input?.unit ?? '',
+          options: input?.options ?? (type === 'select' ? ['选项 1', '选项 2'] : []),
+        })
+
+        const column = mapColumn(response.data)
+        project.columns.push(column)
+        project.rows.forEach((row) => {
+          project.cells[getCellKey(row.id, column.id)] = createCell()
+        })
+        touchProject(project)
+        this.markProjectHydrated(projectId)
+        return column
+      }
+      catch {
+        return null
+      }
     },
 
-    updateColumn(projectId: string, columnId: string, patch: Partial<DecisionColumn>) {
-      const project = this.projects.find(item => item.id === projectId)
+    async updateColumn(projectId: string, columnId: string, patch: Partial<DecisionColumn>) {
+      const project = this.getProjectById(projectId)
       const column = project?.columns.find(item => item.id === columnId)
       if (!project || !column)
-        return
+        return null
 
       Object.assign(column, patch)
-      if (patch.type === 'select' && (!patch.options || !patch.options.length) && !column.options.length) {
+      if (column.type === 'select' && !column.options.length) {
         column.options = ['选项 1', '选项 2']
       }
       touchProject(project)
+
+      try {
+        await updateColumnApi(Number(projectId), Number(columnId), {
+          title: column.title,
+          type: column.type,
+          weight: column.weight,
+          unit: column.unit,
+          options: column.options,
+        })
+      }
+      catch {}
+
+      return column
     },
 
-    removeColumn(projectId: string, columnId: string) {
-      const project = this.projects.find(item => item.id === projectId)
+    async removeColumn(projectId: string, columnId: string) {
+      const project = this.getProjectById(projectId)
       if (!project || project.columns.length <= 1)
-        return
-      project.columns = project.columns.filter(column => column.id !== columnId)
-      Object.keys(project.cells).forEach((key) => {
-        if (key.endsWith(`:${columnId}`))
-          delete project.cells[key]
-      })
-      touchProject(project)
+        return false
+
+      try {
+        await deleteColumnApi(Number(projectId), Number(columnId))
+        project.columns = project.columns.filter(column => column.id !== columnId)
+        Object.keys(project.cells).forEach((key) => {
+          if (key.endsWith(`:${columnId}`))
+            delete project.cells[key]
+        })
+        touchProject(project)
+        return true
+      }
+      catch {
+        return false
+      }
     },
 
-    updateCell(projectId: string, rowId: string, columnId: string, patch: Partial<DecisionCell>) {
-      const project = this.projects.find(item => item.id === projectId)
+    async updateCell(projectId: string, rowId: string, columnId: string, patch: Partial<DecisionCell>) {
+      const project = this.getProjectById(projectId)
       if (!project)
-        return
+        return null
+
       const key = getCellKey(rowId, columnId)
       project.cells[key] = cloneCell({
         ...project.cells[key],
         ...patch,
       })
       touchProject(project)
+
+      const queueKey = `${projectId}:${rowId}:${columnId}`
+      const previous = cellSaveQueues.get(queueKey) ?? Promise.resolve()
+      const persist = async () => {
+        const nextProject = this.getProjectById(projectId)
+        if (!nextProject)
+          return
+
+        await upsertCellApi(Number(projectId), getProjectCellPayload(nextProject, rowId, columnId))
+      }
+
+      let trackedPromise: Promise<void>
+      trackedPromise = previous
+        .catch(() => undefined)
+        .then(persist)
+        .finally(() => {
+          if (cellSaveQueues.get(queueKey) === trackedPromise) {
+            cellSaveQueues.delete(queueKey)
+          }
+        })
+
+      cellSaveQueues.set(queueKey, trackedPromise)
+      await trackedPromise.catch(() => undefined)
+
+      return project.cells[key]
     },
 
     generateSummary(projectId: string, focusPrompt: string) {
-      const project = this.projects.find(item => item.id === projectId)
+      const project = this.getProjectById(projectId)
       if (!project)
         return null
+
       project.aiSummary = buildAISummary(project, focusPrompt)
       touchProject(project)
       return project.aiSummary
     },
 
     saveAsTemplate(projectId: string, name: string) {
-      const project = this.projects.find(item => item.id === projectId)
+      const project = this.getProjectById(projectId)
       const trimmed = name.trim()
       if (!project || !trimmed)
-        return
-      this.templates.unshift(cloneTemplateFromProject(project, trimmed))
+        return null
+
+      const template = cloneTemplateFromProject(project, trimmed)
+      this.templates = [template, ...this.templates]
       touchProject(project)
+      return template
     },
 
-    createShareLink(projectId: string) {
-      const project = this.projects.find(item => item.id === projectId)
+    async createShareLink(projectId: string) {
+      const project = this.getProjectById(projectId)
       if (!project)
         return null
-      project.shareToken = `cm_${Math.random().toString(36).slice(2, 10)}`
+
+      project.shareToken = project.shareToken || `cm_${Math.random().toString(36).slice(2, 10)}`
       touchProject(project)
+      await this.persistProject(projectId)
       return project.shareToken
     },
 
     getProjectRanking(projectId: string) {
-      const project = this.projects.find(item => item.id === projectId)
+      const project = this.getProjectById(projectId)
       return project ? calculateRanking(project) : []
     },
 
     getProjectCell(projectId: string, rowId: string, columnId: string) {
-      const project = this.projects.find(item => item.id === projectId)
+      const project = this.getProjectById(projectId)
       return project ? resolveProjectCell(project, rowId, columnId) : createCell()
     },
-  },
-
-  persist: {
-    storage: localStorage,
   },
 })

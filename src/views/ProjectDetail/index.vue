@@ -55,10 +55,12 @@ const columnTypeLabelMap: Record<DecisionColumnType, string> = {
   text: '信息',
 }
 
-function syncRouteProject(projectId: string | string[] | undefined) {
+async function syncRouteProject(projectId: string | string[] | undefined) {
   const id = Array.isArray(projectId) ? projectId[0] : projectId
   if (!id)
     return
+
+  await workspaceStore.ensureLoaded()
 
   const exists = workspaceStore.projects.find(project => project.id === id)
   if (!exists) {
@@ -67,7 +69,7 @@ function syncRouteProject(projectId: string | string[] | undefined) {
     return
   }
 
-  workspaceStore.selectProject(id)
+  await workspaceStore.selectProject(id)
 }
 
 watch(() => route.params.id, syncRouteProject, { immediate: true })
@@ -299,7 +301,7 @@ async function copyShareLink() {
   if (!currentProject.value)
     return
 
-  const token = currentProject.value.shareToken || workspaceStore.createShareLink(currentProject.value.id)
+  const token = currentProject.value.shareToken || await workspaceStore.createShareLink(currentProject.value.id)
   if (!token) {
     toast.error('暂时无法生成分享链接')
     return
@@ -362,11 +364,11 @@ function exportSnapshot() {
   toast.success('图片导出入口已保留，后续可接真实导出能力。')
 }
 
-function removeCurrentProject() {
+async function removeCurrentProject() {
   if (!currentProject.value)
     return
 
-  workspaceStore.deleteProject(currentProject.value.id)
+  await workspaceStore.deleteProject(currentProject.value.id)
   toast.success('项目已删除，已返回工作台')
   router.push(RouterPath.DASHBOARD)
 }

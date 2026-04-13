@@ -31,9 +31,6 @@ export interface User {
 
 export interface SidebarWorkspace {
   title: string
-  subtitle: string
-  projectCount: number
-  folderCount: number
 }
 
 export interface SidebarRecentProject {

@@ -18,9 +18,6 @@ export const useSidebarData = () => {
 
   const workspace = computed<SidebarWorkspace>(() => ({
     title: 'Choice Matrix',
-    subtitle: `${workspaceStore.projects.length} 个项目正在推进`,
-    projectCount: workspaceStore.projects.length,
-    folderCount: workspaceStore.folders.length,
   }))
 
   const recentProjects = computed<SidebarRecentProject[]>(() => {
