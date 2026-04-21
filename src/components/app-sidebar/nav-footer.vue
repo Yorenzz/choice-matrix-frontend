@@ -44,7 +44,7 @@ const userInitials = computed(() => {
             size="lg"
             class="app-sidebar__account-button rounded-2xl border border-transparent px-2.5 py-2 transition-all data-[state=open]:border-white/80 data-[state=open]:bg-white/80 data-[state=open]:text-slate-900"
           >
-            <Avatar class="size-9 rounded-xl ring-1 ring-slate-200/80">
+            <Avatar class="app-sidebar__account-avatar size-9 rounded-xl ring-1 ring-slate-200/80">
               <AvatarImage :src="user.avatar" :alt="user.name" />
               <AvatarFallback class="rounded-xl bg-slate-900 text-xs font-semibold text-white">
                 {{ userInitials }}

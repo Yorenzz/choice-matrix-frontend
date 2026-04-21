@@ -18,6 +18,11 @@ export const useSidebarData = () => {
 
   const workspace = computed<SidebarWorkspace>(() => ({
     title: 'Choice Matrix',
+    projectCount: workspaceStore.projects.length,
+    scoreColumnCount: workspaceStore.projects.reduce((total, project) => {
+      return total + project.columns.filter(column => column.type === 'score').length
+    }, 0),
+    completionRatio: resolveWorkspaceCompletion(workspaceStore.projects),
   }))
 
   const recentProjects = computed<SidebarRecentProject[]>(() => {
@@ -53,4 +58,26 @@ export const useSidebarData = () => {
   return {
     sidebarData,
   }
+}
+
+function resolveWorkspaceCompletion(projects: ReturnType<typeof useDecisionWorkspaceStore>['projects']) {
+  let filled = 0
+  let total = 0
+
+  projects.forEach((project) => {
+    total += project.rows.length * project.columns.length
+    Object.values(project.cells).forEach((cell) => {
+      if (
+        cell.text.trim()
+        || cell.note.trim()
+        || cell.select
+        || cell.score !== null
+        || cell.numeric !== null
+      ) {
+        filled += 1
+      }
+    })
+  })
+
+  return total ? Math.round((filled / total) * 100) : 0
 }

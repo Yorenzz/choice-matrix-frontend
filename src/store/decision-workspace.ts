@@ -1,3 +1,11 @@
+import type {
+  MatrixCellRecord,
+  MatrixColumnRecord,
+  MatrixColumnType,
+  MatrixRowRecord,
+  ProjectPayloadRecord,
+  ProjectRecord,
+} from '@/api/matrix'
 import { defineStore } from 'pinia'
 import {
   createColumnApi,
@@ -7,15 +15,10 @@ import {
   deleteColumnApi,
   deleteProjectApi,
   deleteRowApi,
+  generateProjectSummaryApi,
   getFoldersApi,
   getProjectPayloadApi,
   getProjectsApi,
-  type MatrixCellRecord,
-  type MatrixColumnRecord,
-  type MatrixColumnType,
-  type MatrixRowRecord,
-  type ProjectPayloadRecord,
-  type ProjectRecord,
   updateColumnApi,
   updateProjectApi,
   updateRowApi,
@@ -64,6 +67,7 @@ export interface DecisionAISummary {
   generatedAt: string
   overview: string
   recommendation: string
+  sourceMarkdown?: string
   strengths: DecisionSummaryEntry[]
   tradeoffs: DecisionSummaryEntry[]
   evidence: string[]
@@ -528,7 +532,7 @@ function calculateRanking(project: DecisionProject): RankedRow[] {
   return result
 }
 
-function buildAISummary(project: DecisionProject, focusPrompt: string): DecisionAISummary {
+function buildAISummary(project: DecisionProject, focusPrompt: string, sourceMarkdown?: string): DecisionAISummary {
   const ranking = calculateRanking(project)
   const completeRows = ranking.filter(row => row.total !== null)
   const scoreColumns = getScoreColumns(project)
@@ -629,6 +633,7 @@ function buildAISummary(project: DecisionProject, focusPrompt: string): Decision
     recommendation: completeRows.length && topRow
       ? `如果现在就要做决定，可以先把 ${topRow.rowTitle} 当作基准方案，再重点确认它在低分维度上的风险。`
       : '建议先补齐每个候选项的核心评分和关键备注，避免在信息不完整时过早下结论。',
+    sourceMarkdown,
     strengths,
     tradeoffs,
     evidence,
@@ -1156,8 +1161,7 @@ export const useDecisionWorkspaceStore = defineStore('decision-workspace', {
         await upsertCellApi(Number(projectId), getProjectCellPayload(nextProject, rowId, columnId))
       }
 
-      let trackedPromise: Promise<void>
-      trackedPromise = previous
+      const trackedPromise: Promise<void> = previous
         .catch(() => undefined)
         .then(persist)
         .finally(() => {
@@ -1172,12 +1176,21 @@ export const useDecisionWorkspaceStore = defineStore('decision-workspace', {
       return project.cells[key]
     },
 
-    generateSummary(projectId: string, focusPrompt: string) {
+    async generateSummary(projectId: string, focusPrompt: string) {
       const project = this.getProjectById(projectId)
       if (!project)
         return null
 
-      project.aiSummary = buildAISummary(project, focusPrompt)
+      let sourceMarkdown = ''
+      try {
+        const response = await generateProjectSummaryApi(Number(projectId), {
+          focus_prompt: focusPrompt,
+        })
+        sourceMarkdown = response.data.summary_markdown || response.data.summary || ''
+      }
+      catch {}
+
+      project.aiSummary = buildAISummary(project, focusPrompt, sourceMarkdown)
       touchProject(project)
       return project.aiSummary
     },

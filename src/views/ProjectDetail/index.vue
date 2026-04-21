@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import type {
+  DecisionCell,
+  DecisionColumn,
+  DecisionColumnType,
+  DecisionProject,
+  DecisionRow,
+} from '@/store/decision-workspace'
 import {
   ArrowLeft,
   Bot,
@@ -18,11 +25,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { RouterPath } from '@/constants/route-path'
 import {
-  type DecisionCell,
-  type DecisionColumn,
-  type DecisionColumnType,
-  type DecisionProject,
-  type DecisionRow,
   useDecisionWorkspaceStore,
 } from '@/store/decision-workspace'
 
@@ -48,6 +50,8 @@ const personalTemplateName = ref('')
 const selectedNewColumnType = ref<DecisionColumnType>('score')
 const activeCellEditor = ref<CellEditorState | null>(null)
 const selectOptionDrafts = ref<Record<string, string>>({})
+const isGeneratingSummary = ref(false)
+const isCellSaving = ref(false)
 const columnTypeLabelMap: Record<DecisionColumnType, string> = {
   score: '评分',
   numeric: '数值',
@@ -140,6 +144,26 @@ const activeEditorCell = computed<DecisionCell | null>(() => {
   return workspaceStore.getProjectCell(currentProject.value.id, activeCellEditor.value.rowId, activeCellEditor.value.columnId)
 })
 
+const activeEditorPosition = computed(() => {
+  const project = currentProject.value
+  const editor = activeCellEditor.value
+  if (!project || !editor)
+    return null
+
+  const rowIndex = project.rows.findIndex(row => row.id === editor.rowId)
+  const columnIndex = project.columns.findIndex(column => column.id === editor.columnId)
+  if (rowIndex < 0 || columnIndex < 0)
+    return null
+
+  const total = project.rows.length * project.columns.length
+  return {
+    rowIndex,
+    columnIndex,
+    current: rowIndex * project.columns.length + columnIndex + 1,
+    total,
+  }
+})
+
 function syncProjectMeta() {
   if (!currentProject.value)
     return
@@ -154,8 +178,14 @@ function updateColumn(project: DecisionProject, column: DecisionColumn, patch: P
   workspaceStore.updateColumn(project.id, column.id, patch)
 }
 
-function updateCell(projectId: string, rowId: string, columnId: string, patch: Partial<DecisionCell>) {
-  workspaceStore.updateCell(projectId, rowId, columnId, patch)
+async function updateCell(projectId: string, rowId: string, columnId: string, patch: Partial<DecisionCell>) {
+  isCellSaving.value = true
+  try {
+    await workspaceStore.updateCell(projectId, rowId, columnId, patch)
+  }
+  finally {
+    isCellSaving.value = false
+  }
 }
 
 function normalizeOptions(values: string[]) {
@@ -219,11 +249,82 @@ function closeCellEditor() {
   activeCellEditor.value = null
 }
 
-function addColumn(type = selectedNewColumnType.value) {
+function moveActiveEditor(step: 1 | -1) {
+  const project = currentProject.value
+  const position = activeEditorPosition.value
+  if (!project || !position)
+    return
+
+  const nextIndex = position.current - 1 + step
+  if (nextIndex < 0 || nextIndex >= position.total)
+    return
+
+  const nextRow = project.rows[Math.floor(nextIndex / project.columns.length)]
+  const nextColumn = project.columns[nextIndex % project.columns.length]
+  if (nextRow && nextColumn) {
+    openCellEditor(nextRow.id, nextColumn.id)
+  }
+}
+
+function setScoreValue(score: number) {
+  if (!currentProject.value || !activeEditorRow.value || !activeEditorColumn.value)
+    return
+
+  updateCell(currentProject.value.id, activeEditorRow.value.id, activeEditorColumn.value.id, { score })
+}
+
+function clearActiveCell() {
+  if (!currentProject.value || !activeEditorRow.value || !activeEditorColumn.value)
+    return
+
+  updateCell(currentProject.value.id, activeEditorRow.value.id, activeEditorColumn.value.id, {
+    text: '',
+    note: '',
+    score: null,
+    numeric: null,
+    select: null,
+  })
+}
+
+async function addRow() {
   if (!currentProject.value)
     return
 
-  workspaceStore.addColumn(currentProject.value.id, {
+  const row = await workspaceStore.addRow(currentProject.value.id)
+  if (!row) {
+    toast.error('选项新增失败')
+    return
+  }
+
+  toast.success('已新增一个候选选项')
+}
+
+async function removeRow(row: DecisionRow) {
+  if (!currentProject.value)
+    return
+
+  if (currentProject.value.rows.length <= 1) {
+    toast.error('至少保留一个候选选项')
+    return
+  }
+
+  if (!window.confirm(`确定删除「${row.title}」吗？相关单元格内容也会一起删除。`))
+    return
+
+  const removed = await workspaceStore.removeRow(currentProject.value.id, row.id)
+  if (!removed) {
+    toast.error('选项删除失败')
+    return
+  }
+
+  toast.success('选项已删除')
+}
+
+async function addColumn(type = selectedNewColumnType.value) {
+  if (!currentProject.value)
+    return
+
+  const column = await workspaceStore.addColumn(currentProject.value.id, {
     type,
     title: type === 'numeric'
       ? '新的数值维度'
@@ -233,6 +334,34 @@ function addColumn(type = selectedNewColumnType.value) {
           ? '新的选择维度'
           : '新的评分维度',
   })
+
+  if (!column) {
+    toast.error('维度新增失败')
+    return
+  }
+
+  toast.success('已新增一个比较维度')
+}
+
+async function removeColumn(column: DecisionColumn) {
+  if (!currentProject.value)
+    return
+
+  if (currentProject.value.columns.length <= 1) {
+    toast.error('至少保留一个比较维度')
+    return
+  }
+
+  if (!window.confirm(`确定删除「${column.title}」吗？这一列的单元格内容也会一起删除。`))
+    return
+
+  const removed = await workspaceStore.removeColumn(currentProject.value.id, column.id)
+  if (!removed) {
+    toast.error('维度删除失败')
+    return
+  }
+
+  toast.success('维度已删除')
 }
 
 function summarizeCell(projectId: string, rowId: string, column: DecisionColumn) {
@@ -270,17 +399,23 @@ function summarizeCell(projectId: string, rowId: string, column: DecisionColumn)
   }
 }
 
-function generateSummary() {
+async function generateSummary() {
   if (!currentProject.value)
     return
 
-  const summary = workspaceStore.generateSummary(currentProject.value.id, projectFocusPrompt.value.trim())
-  if (!summary) {
-    toast.error('当前项目暂时无法生成摘要')
-    return
-  }
+  isGeneratingSummary.value = true
+  try {
+    const summary = await workspaceStore.generateSummary(currentProject.value.id, projectFocusPrompt.value.trim())
+    if (!summary) {
+      toast.error('当前项目暂时无法生成摘要')
+      return
+    }
 
-  toast.success('AI 摘要已基于当前数据重新整理')
+    toast.success(summary.sourceMarkdown ? 'AI 摘要已从后端生成并整理' : '后端暂不可用，已先用本地数据整理摘要')
+  }
+  finally {
+    isGeneratingSummary.value = false
+  }
 }
 
 function saveAsTemplate() {
@@ -348,7 +483,7 @@ function exportCsv() {
     ].join(','))
   })
 
-  const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const blob = new Blob([`\uFEFF${rows.join('\n')}`], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
@@ -474,7 +609,7 @@ function backToWorkspace() {
                   </div>
 
                   <div class="flex flex-wrap items-center gap-2">
-                    <UiButton type="button" class="h-9 rounded-2xl bg-teal-700 px-3 text-white hover:bg-teal-600" @click="workspaceStore.addRow(currentProject.id)">
+                    <UiButton type="button" class="h-9 rounded-2xl bg-teal-700 px-3 text-white hover:bg-teal-600" @click="addRow">
                       <Plus class="mr-2 size-4" />
                       新增选项
                     </UiButton>
@@ -554,7 +689,7 @@ function backToWorkspace() {
                         type="button"
                         variant="ghost"
                         class="h-9 w-9 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-rose-500"
-                        @click="workspaceStore.removeColumn(currentProject.id, column.id)"
+                        @click="removeColumn(column)"
                       >
                         <Trash2 class="size-4" />
                       </UiButton>
@@ -689,12 +824,23 @@ function backToWorkspace() {
 
                 <template v-for="row in currentProject.rows" :key="row.id">
                   <div class="sticky left-0 z-10 border-r border-b border-slate-200 bg-white px-5 py-4 backdrop-blur">
-                    <input
-                      :value="row.title"
-                      type="text"
-                      class="w-full border-none bg-transparent p-0 text-base font-semibold text-slate-900 outline-none"
-                      @input="workspaceStore.updateRow(currentProject.id, row.id, { title: ($event.target as HTMLInputElement).value })"
-                    >
+                    <div class="flex items-start gap-2">
+                      <input
+                        :value="row.title"
+                        type="text"
+                        class="min-w-0 flex-1 border-none bg-transparent p-0 text-base font-semibold text-slate-900 outline-none"
+                        @input="workspaceStore.updateRow(currentProject.id, row.id, { title: ($event.target as HTMLInputElement).value })"
+                      >
+                      <button
+                        type="button"
+                        class="inline-flex size-8 shrink-0 items-center justify-center rounded-2xl text-slate-300 transition hover:bg-rose-50 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
+                        :disabled="currentProject.rows.length <= 1"
+                        title="删除选项"
+                        @click="removeRow(row)"
+                      >
+                        <Trash2 class="size-4" />
+                      </button>
+                    </div>
                     <textarea
                       :value="row.subtitle"
                       rows="2"
@@ -842,9 +988,14 @@ function backToWorkspace() {
                 class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-900 outline-none"
                 placeholder="可选：告诉 AI 本次更想强调哪些维度，比如“重点看价格和续航”。"
               />
-              <UiButton type="button" class="h-11 rounded-2xl bg-slate-950 text-white" @click="generateSummary">
+              <UiButton
+                type="button"
+                class="h-11 rounded-2xl bg-slate-950 text-white disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="isGeneratingSummary"
+                @click="generateSummary"
+              >
                 <Sparkles class="mr-2 size-4" />
-                生成 AI 摘要
+                {{ isGeneratingSummary ? '正在生成...' : '生成 AI 摘要' }}
               </UiButton>
             </div>
 
@@ -866,6 +1017,15 @@ function backToWorkspace() {
                   {{ currentProject.aiSummary.recommendation }}
                 </p>
               </div>
+
+              <details v-if="currentProject.aiSummary.sourceMarkdown" class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
+                <summary class="cursor-pointer text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                  后端摘要原文
+                </summary>
+                <p class="mt-3 whitespace-pre-wrap text-xs leading-6 text-slate-600">
+                  {{ currentProject.aiSummary.sourceMarkdown }}
+                </p>
+              </details>
             </div>
           </UiCardHeader>
         </UiCard>
@@ -910,17 +1070,48 @@ function backToWorkspace() {
       <UiSheetContent side="right" class="w-full max-w-[560px] border-l border-slate-200 bg-white/96 px-0">
         <template v-if="currentProject && activeEditorRow && activeEditorColumn && activeEditorCell">
           <UiSheetHeader class="border-b border-slate-200 px-6 py-5">
-            <div class="flex items-center gap-2">
-              <UiSheetTitle class="text-xl font-semibold tracking-[-0.04em] text-slate-950">
-                {{ activeEditorRow.title }} · {{ activeEditorColumn.title }}
-              </UiSheetTitle>
-              <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold tracking-[0.16em] text-slate-600 uppercase">
-                {{ getColumnTypeLabel(activeEditorColumn.type) }}
-              </span>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div class="grid gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <UiSheetTitle class="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+                    {{ activeEditorRow.title }} · {{ activeEditorColumn.title }}
+                  </UiSheetTitle>
+                  <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold tracking-[0.16em] text-slate-600 uppercase">
+                    {{ getColumnTypeLabel(activeEditorColumn.type) }}
+                  </span>
+                  <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="isCellSaving ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'">
+                    {{ isCellSaving ? '保存中' : '已保存' }}
+                  </span>
+                </div>
+                <UiSheetDescription class="text-sm leading-6 text-slate-500">
+                  主矩阵里只看摘要，详细编辑放在这里完成，更适合正式产品的矩阵体验。
+                </UiSheetDescription>
+              </div>
+
+              <div class="flex shrink-0 items-center gap-2">
+                <UiButton
+                  type="button"
+                  variant="outline"
+                  class="h-9 rounded-2xl border-slate-200 bg-white px-3 text-slate-700"
+                  :disabled="!activeEditorPosition || activeEditorPosition.current <= 1"
+                  @click="moveActiveEditor(-1)"
+                >
+                  上一格
+                </UiButton>
+                <span v-if="activeEditorPosition" class="min-w-16 text-center text-xs font-semibold text-slate-500">
+                  {{ activeEditorPosition.current }}/{{ activeEditorPosition.total }}
+                </span>
+                <UiButton
+                  type="button"
+                  variant="outline"
+                  class="h-9 rounded-2xl border-slate-200 bg-white px-3 text-slate-700"
+                  :disabled="!activeEditorPosition || activeEditorPosition.current >= activeEditorPosition.total"
+                  @click="moveActiveEditor(1)"
+                >
+                  下一格
+                </UiButton>
+              </div>
             </div>
-            <UiSheetDescription class="text-sm leading-6 text-slate-500">
-              主矩阵里只看摘要，详细编辑放在这里完成，更适合正式产品的矩阵体验。
-            </UiSheetDescription>
           </UiSheetHeader>
 
           <div class="grid gap-5 overflow-y-auto px-6 py-5">
@@ -955,6 +1146,18 @@ function backToWorkspace() {
                   <span class="inline-flex min-w-12 items-center justify-center rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
                     W{{ activeEditorColumn.weight }}
                   </span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="score in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+                    :key="score"
+                    type="button"
+                    class="inline-flex size-9 items-center justify-center rounded-full text-sm font-semibold transition"
+                    :class="activeEditorCell.score === score ? 'bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                    @click="setScoreValue(score)"
+                  >
+                    {{ score }}
+                  </button>
                 </div>
               </div>
 
@@ -1036,6 +1239,25 @@ function backToWorkspace() {
                 placeholder="把这个维度下的关键信息写完整。"
                 @input="updateCell(currentProject.id, activeEditorRow.id, activeEditorColumn.id, { text: ($event.target as HTMLTextAreaElement).value })"
               />
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+              <UiButton type="button" variant="outline" class="h-10 rounded-2xl border-rose-200 bg-rose-50 px-4 text-rose-700 hover:bg-rose-100" @click="clearActiveCell">
+                清空当前格
+              </UiButton>
+              <div class="flex items-center gap-2">
+                <UiButton type="button" variant="outline" class="h-10 rounded-2xl border-slate-200 bg-white px-4 text-slate-700" @click="closeCellEditor">
+                  完成
+                </UiButton>
+                <UiButton
+                  type="button"
+                  class="h-10 rounded-2xl bg-slate-950 px-4 text-white"
+                  :disabled="!activeEditorPosition || activeEditorPosition.current >= activeEditorPosition.total"
+                  @click="moveActiveEditor(1)"
+                >
+                  保存并下一格
+                </UiButton>
+              </div>
             </div>
           </div>
         </template>

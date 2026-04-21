@@ -256,7 +256,7 @@ onBeforeUnmount(() => {
               </div>
 
               <div class="space-y-4">
-                <h2 class="max-w-4xl font-display text-[2.7rem] font-semibold leading-[1.02] tracking-[-0.06em] text-slate-950 sm:text-[3.6rem] lg:text-[4.5rem]">
+                <h2 class="max-w-4xl font-display text-[2.45rem] font-semibold leading-[1.04] tracking-[-0.055em] text-slate-950 sm:text-[3.25rem] lg:text-[4.05rem]">
                   把复杂选择整理成一张清楚的决策矩阵。
                 </h2>
                 <p class="max-w-2xl text-[1rem] leading-8 text-slate-600 sm:text-[1.06rem]">
@@ -312,7 +312,7 @@ onBeforeUnmount(() => {
                 Preview
               </p>
               <h3 class="font-display text-[2rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.3rem]">
-                一个更直观的选择面板
+                决策面板预览
               </h3>
             </div>
           </div>
@@ -324,6 +324,20 @@ onBeforeUnmount(() => {
 
             <div class="relative px-5 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
               <div class="home-preview__sheet">
+                <div class="home-preview__chrome">
+                  <div class="flex items-center gap-2">
+                    <span class="home-preview__dot bg-rose-300" />
+                    <span class="home-preview__dot bg-amber-300" />
+                    <span class="home-preview__dot bg-teal-400" />
+                  </div>
+                  <div class="home-preview__chrome-pill">
+                    ChoiceMatrix / Offer Decision
+                  </div>
+                  <div class="home-preview__chrome-status">
+                    Live Preview
+                  </div>
+                </div>
+
                 <div class="home-preview__spread">
                   <div class="home-preview__narrative">
                     <div class="home-preview__eyebrow">
@@ -336,10 +350,10 @@ onBeforeUnmount(() => {
                         Decision Matrix
                       </p>
                       <h4 class="home-preview__title font-display">
-                        快速看板
+                        决策驾驶舱
                       </h4>
                       <p class="home-preview__summary">
-                        用一张面板先把候选项、维度和结果放在一起看。
+                        把候选项、评分维度和最终排序放进同一个视图，先看结构，再看结果。
                       </p>
                     </div>
 
@@ -349,7 +363,7 @@ onBeforeUnmount(() => {
                         :key="signal.label"
                         class="home-preview__signal-row"
                       >
-                        <component :is="signal.icon" class="size-4 text-slate-500" />
+                        <component :is="signal.icon" class="size-4 text-slate-300" />
                         <span>{{ signal.label }}</span>
                       </div>
                     </div>
@@ -381,11 +395,25 @@ onBeforeUnmount(() => {
                         </h4>
                       </div>
                       <p class="home-preview__feature-copy">
-                        保持简单，但让结构、重点和分数关系更好看也更好读。
+                        用权重、分数和备注把模糊判断变成可比较的结果。
                       </p>
                     </div>
 
                     <div class="home-preview__matrix-paper">
+                      <div class="home-preview__floating-card home-preview__floating-card--rank">
+                        <p class="text-[11px] font-semibold tracking-[0.16em] text-slate-400 uppercase">
+                          Current Best
+                        </p>
+                        <p class="mt-1 text-sm font-semibold text-slate-950">
+                          Offer A
+                        </p>
+                      </div>
+
+                      <div class="home-preview__floating-card home-preview__floating-card--confidence">
+                        <Sparkles class="size-4 text-amber-500" />
+                        <span>权重已应用</span>
+                      </div>
+
                       <div class="home-preview__ledger">
                         <div class="home-preview__ledger-head hidden items-center md:grid">
                           <div class="home-preview__ledger-title">
@@ -431,7 +459,7 @@ onBeforeUnmount(() => {
                           <div
                             v-for="(score, scoreIndex) in row.scores"
                             :key="`${row.title}-${previewColumns[scoreIndex]?.title ?? scoreIndex}`"
-                            class="home-preview__ledger-score"
+                            class="home-preview__ledger-score hidden md:block"
                           >
                             <span class="home-preview__cell-label md:hidden">
                               {{ previewColumns[scoreIndex]?.title ?? `维度 ${scoreIndex + 1}` }}
@@ -566,7 +594,7 @@ onBeforeUnmount(() => {
               <div class="space-y-4">
                 <div class="inline-flex w-fit items-center gap-2 rounded-full border border-white/70 bg-white/70 px-4 py-2 text-xs font-semibold tracking-[0.18em] text-slate-700 uppercase shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur">
                   <Sparkles class="size-3.5 text-teal-700" />
-                  Ready To Start
+                  Start
                 </div>
 
                 <div class="space-y-3">
@@ -574,7 +602,7 @@ onBeforeUnmount(() => {
                     把这次选择真正落到一张可继续推进的矩阵里。
                   </h3>
                   <p class="max-w-2xl text-[0.98rem] leading-8 text-slate-600 sm:text-[1.04rem]">
-                    先试用快速搭框架，或者直接登录进入工作台。看到最后再开始，刚刚好。
+                    先用游客模式快速搭出框架，确认适合后再登录保存也不迟。
                   </p>
                 </div>
               </div>
@@ -587,14 +615,6 @@ onBeforeUnmount(() => {
                 >
                   {{ footerPrimaryAction.label }}
                   <component :is="footerPrimaryAction.icon" class="ml-2 size-4" />
-                </UiButton>
-                <UiButton
-                  v-if="!isLoggedIn"
-                  class="home-final-cta__button home-final-cta__button--login h-12 rounded-2xl px-5 text-[0.96rem] font-semibold text-amber-950 shadow-[0_16px_36px_rgba(217,119,6,0.14)]"
-                  @click="$router.push(RouterPath.LOGIN)"
-                >
-                  登录查看工作台
-                  <LogIn class="ml-2 size-4" />
                 </UiButton>
               </div>
             </div>

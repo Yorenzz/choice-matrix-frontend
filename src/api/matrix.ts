@@ -68,6 +68,11 @@ export interface ProjectPayloadRecord {
   cells: MatrixCellRecord[]
 }
 
+export interface ProjectSummaryRecord {
+  summary: string
+  summary_markdown: string
+}
+
 export function getFoldersApi() {
   return api.get<FolderRecord[]>({
     url: '/folders',
@@ -192,9 +197,9 @@ export function upsertCellApi(projectID: number, data: {
   })
 }
 
-export function generateProjectSummaryApi(projectID: number) {
-  return api.post<{ summary: string }>({
+export function generateProjectSummaryApi(projectID: number, data: { focus_prompt?: string } = {}) {
+  return api.post<ProjectSummaryRecord>({
     url: `/projects/${projectID}/ai/summary`,
-    data: {},
+    data,
   })
 }

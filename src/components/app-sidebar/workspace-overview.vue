@@ -34,4 +34,18 @@ const isCompact = computed(() => state.value === 'collapsed' && !isMobile.value)
       </p>
     </div>
   </router-link>
+
+  <div v-if="!isCompact" class="app-sidebar__workspace-status">
+    <div class="app-sidebar__workspace-status-head">
+      <span>Workspace</span>
+      <strong>{{ workspace.completionRatio }}%</strong>
+    </div>
+    <div class="app-sidebar__workspace-meter" aria-hidden="true">
+      <span :style="{ width: `${workspace.completionRatio}%` }" />
+    </div>
+    <div class="app-sidebar__workspace-stats">
+      <span>{{ workspace.projectCount }} 个项目</span>
+      <span>{{ workspace.scoreColumnCount }} 个评分维度</span>
+    </div>
+  </div>
 </template>

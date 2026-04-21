@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { SidebarRecentProject } from './types'
-import { ArrowUpRight, Star } from 'lucide-vue-next'
+import { ArrowUpRight, FilePlus2, Star } from 'lucide-vue-next'
 import { useSidebar } from '@/components/ui/sidebar'
+import { RouterPath } from '@/constants/route-path'
 
 const { projects } = defineProps<{
   projects: SidebarRecentProject[]
@@ -18,7 +19,7 @@ function isActive(href: string) {
 </script>
 
 <template>
-  <section v-if="projects.length && !isCompact" class="app-sidebar__recent">
+  <section v-if="!isCompact" class="app-sidebar__recent">
     <div class="app-sidebar__recent-head">
       <p class="app-sidebar__section-kicker">
         最近项目
@@ -28,7 +29,7 @@ function isActive(href: string) {
       </p>
     </div>
 
-    <div class="app-sidebar__recent-list">
+    <div v-if="projects.length" class="app-sidebar__recent-list">
       <router-link
         v-for="project in projects"
         :key="project.id"
@@ -49,5 +50,15 @@ function isActive(href: string) {
         <ArrowUpRight class="size-3.5 text-slate-300 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
       </router-link>
     </div>
+
+    <router-link v-else :to="RouterPath.DASHBOARD" class="app-sidebar__recent-empty">
+      <span class="app-sidebar__recent-empty-icon">
+        <FilePlus2 class="size-4" />
+      </span>
+      <span>
+        <strong>还没有项目</strong>
+        <small>进入工作台创建第一张矩阵</small>
+      </span>
+    </router-link>
   </section>
 </template>

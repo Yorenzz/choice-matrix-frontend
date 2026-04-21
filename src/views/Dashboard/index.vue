@@ -59,7 +59,7 @@ async function createFolder() {
 
   const folder = await workspaceStore.createFolder(name)
   if (!folder) {
-    toast.error('鏂囦欢澶瑰垱寤哄け璐?')
+    toast.error('文件夹创建失败')
     return
   }
   newFolderName.value = ''
@@ -75,7 +75,7 @@ async function createProject() {
   })
 
   if (!project) {
-    toast.error('椤圭洰鍒涘缓澶辫触')
+    toast.error('项目创建失败')
     return
   }
 
@@ -84,14 +84,7 @@ async function createProject() {
   selectedTemplateId.value = ''
   toast.success('项目已经创建，正在进入详情页')
 
-  if (!project) {
-    toast.error('妯℃澘搴旂敤澶辫触')
-    return
-  }
-
-  {
-    router.push(`${RouterPath.PROJECTS}/${project.id}`)
-  }
+  router.push(`${RouterPath.PROJECTS}/${project.id}`)
 }
 
 function updateSelectedTemplate(value: unknown) {

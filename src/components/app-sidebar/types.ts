@@ -31,6 +31,9 @@ export interface User {
 
 export interface SidebarWorkspace {
   title: string
+  projectCount: number
+  scoreColumnCount: number
+  completionRatio: number
 }
 
 export interface SidebarRecentProject {

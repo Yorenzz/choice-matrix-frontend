@@ -47,7 +47,9 @@ const isActive = (menu: NavItem): boolean => {
 
 <template>
   <SidebarGroup v-for="group in navMain" :key="group.title" class="app-sidebar__group">
-    <SidebarGroupLabel class="app-sidebar__group-label">{{ group.title }}</SidebarGroupLabel>
+    <SidebarGroupLabel class="app-sidebar__group-label">
+      <span>{{ group.title }}</span>
+    </SidebarGroupLabel>
     <SidebarMenu class="gap-1.5">
       <template v-for="menu in group.items" :key="menu.title">
         <SidebarMenuItem v-if="!menu.items">
